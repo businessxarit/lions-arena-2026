@@ -2093,7 +2093,8 @@ export default function App() {
         @keyframes fadeOut{to{opacity:0;transform:scale(1.05)}}
         @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes particleFloat{from{transform:translateY(0) scale(1);opacity:0.15}to{transform:translateY(-20px) scale(1.5);opacity:0.35}}
-        *{box-sizing:border-box;margin:0;padding:0}
+        *{box-sizing:border-box;margin:0;padding:0;max-width:100%}
+img,video{max-width:100%;height:auto}
         ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#333344;border-radius:2px}
         select option{background:#111120}
         input::placeholder{color:#5a5a7a}
