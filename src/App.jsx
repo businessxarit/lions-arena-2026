@@ -2085,7 +2085,7 @@ export default function App() {
   const showBanner = (installable || !notifGranted) && !installed;
 
   return (
-    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:"'DM Sans','Segoe UI',sans-serif", maxWidth:480, margin:"0 auto", overflowX:"hidden", width:"100%", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
+    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:"'DM Sans','Segoe UI',sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,900&display=swap');
         @keyframes ping{75%,100%{transform:scale(2.3);opacity:0}}
@@ -2152,7 +2152,7 @@ export default function App() {
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{ position:"fixed", bottom:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", flexShrink:0 }}>
+      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", zIndex:200 }}>
         {TABS.map(([ico,lbl],i)=>(
           <button key={i} onClick={()=>changeTab(i)} style={{ flex:1, background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
             <span style={{ fontSize:24, filter:tab===i?"none":"grayscale(50%)", transition:"filter 0.2s" }}>{ico}</span>
