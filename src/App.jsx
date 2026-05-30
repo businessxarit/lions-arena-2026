@@ -2152,7 +2152,7 @@ export default function App() {
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{ position:"sticky", bottom:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", flexShrink:0 }}>
+      <div style={{ position:"fixed", bottom:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", flexShrink:0 }}>
         {TABS.map(([ico,lbl],i)=>(
           <button key={i} onClick={()=>changeTab(i)} style={{ flex:1, background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
             <span style={{ fontSize:24, filter:tab===i?"none":"grayscale(50%)", transition:"filter 0.2s" }}>{ico}</span>
