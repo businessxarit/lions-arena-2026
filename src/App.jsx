@@ -2085,7 +2085,7 @@ export default function App() {
   const showBanner = (installable || !notifGranted) && !installed;
 
   return (
-    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:"'DM Sans','Segoe UI',sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
+    <div style={{ background:T.bg, color:T.text, fontFamily:"'DM Sans','Segoe UI',sans-serif", position:"fixed", inset:0, maxWidth:480, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,900&display=swap');
         @keyframes ping{75%,100%{transform:scale(2.3);opacity:0}}
@@ -2142,7 +2142,7 @@ img,video{max-width:100%;height:auto}
       <div
         ref={bodyRef}
         {...tabSwipe}
-        style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px" }}
+        style={{ flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 14px 100px" }}
       >
         <Countdown T={T} />
         {tab===0 && <MatchesTab T={T} user={user} />}
