@@ -171,7 +171,7 @@ const NEWS_DATA = [
   { tag:"MONDIAL 2026",title:"104 matchs, 48 équipes — l'histoire s'écrit maintenant",        time:"Il y a 1 jour",emoji:"🏆", color:A.purple },
 ];
 
-/* ══ DATA CONFIG ══ */
+/* ══ CLAUDE AI ══ */
 const DATA_CONFIG = {
   API_FOOTBALL_KEY: "",
   API_FOOTBALL_HOST: "v3.football.api-sports.io",
@@ -215,14 +215,7 @@ async function askClaude(messages, system) {
   } catch { return "❌ Connexion impossible. Réessaie dans un instant."; }
 }
 
-const AI_SYSTEM = `Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026, la plus grande plateforme football mondiale.
-Tu es alimenté par des données en temps réel via API-Football + l'intelligence de Claude AI.
-Tu analyses les matchs avec passion, précision et expertise. Tu parles en français.
-Tu es partisan du Sénégal mais reste analytique et honnête.
-Réponses percutantes, 3-6 phrases, avec emojis football. Jamais de markdown ** ou ###.
-Si tu reçois des stats réelles, base ton analyse dessus exclusivement.
-Stats historiques clés : Klose 16 buts record. Sénégal bat France 1-0 en 2002 (Diop 30', assist Diouf).
-Éliminé fair-play 2018. 8e Qatar 2022 sans Mané. Prédiction 2026 : 63% Sénégal.`;
+const AI_SYSTEM = "Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026. Tu analyses les matchs avec passion et expertise. Tu parles en francais. Reponds en 3-5 phrases avec emojis football. Stats: Klose 16 buts record. Senegal bat France 1-0 en 2002 (Papa Bouba Diop). Prediction 2026: 63% Senegal.";
 
 /* ══ SMALL UTILS ══ */
 function Dot({ color=A.red, size=9 }) {
@@ -390,23 +383,22 @@ function Splash({ onDone }) {
     ]},
   ];
 
-  // Helper to find confederation color for a team
-  const getTeamConfColor = (teamStr) => {
-    if (!teamStr) return "#F5C518";
-    if (["Sénégal","Maroc","Nigeria","Égypte","Cameroun","Ghana","Algérie","Tunisie","Côte d'Ivoire"].some(t => teamStr.includes(t))) return "#00C853";
-    if (["Argentine","Brésil","Uruguay","Colombie","Équateur","Venezuela"].some(t => teamStr.includes(t))) return "#F5C518";
-    if (["France","Allemagne","Espagne","Angleterre","Portugal","Pays-Bas","Belgique","Italie","Croatie","Danemark","Suisse","Autriche","Turquie","Écosse","Serbie","Ukraine"].some(t => teamStr.includes(t))) return "#2979FF";
-    if (["États-Unis","Mexique","Canada","Costa","Panama","Jamaïque"].some(t => teamStr.includes(t))) return "#FF6D00";
-    if (["Japon","Corée","Australie","Iran","Arabie","Qatar","Irak","Ouzbékistan"].some(t => teamStr.includes(t))) return "#D500F9";
-    return "#00E5FF";
-  };
-
   if (showCinema) return <CinematicIntro onFinish={() => setShowCinema(false)} />;
 
   const next = () => {
     if(step === 0) setStep(1);
     else if(step === 1 && name.trim()) setStep(2);
     else if(step === 2 && team) { setAnimOut(true); setTimeout(()=>onDone({ name:name.trim(), team }), 500); }
+  };
+
+  const getConfColor = (teamStr) => {
+    if (!teamStr) return "#F5C518";
+    if (teamStr.includes("Sénégal")||teamStr.includes("Maroc")||teamStr.includes("Nigeria")||teamStr.includes("Cameroun")||teamStr.includes("Ghana")||teamStr.includes("Algérie")||teamStr.includes("Tunisie")||teamStr.includes("Côte")||teamStr.includes("Égypte")) return "#00C853";
+    if (teamStr.includes("Argentine")||teamStr.includes("Brésil")||teamStr.includes("Uruguay")||teamStr.includes("Colombie")||teamStr.includes("Équateur")||teamStr.includes("Venezuela")) return "#F5C518";
+    if (teamStr.includes("France")||teamStr.includes("Allemagne")||teamStr.includes("Espagne")||teamStr.includes("Angleterre")||teamStr.includes("Portugal")||teamStr.includes("Pays-Bas")||teamStr.includes("Belgique")||teamStr.includes("Italie")||teamStr.includes("Croatie")||teamStr.includes("Danemark")||teamStr.includes("Suisse")||teamStr.includes("Autriche")||teamStr.includes("Turquie")||teamStr.includes("Écosse")||teamStr.includes("Serbie")||teamStr.includes("Ukraine")) return "#2979FF";
+    if (teamStr.includes("États-Unis")||teamStr.includes("Mexique")||teamStr.includes("Canada")||teamStr.includes("Costa")||teamStr.includes("Panama")||teamStr.includes("Jamaïque")) return "#FF6D00";
+    if (teamStr.includes("Japon")||teamStr.includes("Corée")||teamStr.includes("Australie")||teamStr.includes("Iran")||teamStr.includes("Arabie")||teamStr.includes("Qatar")||teamStr.includes("Irak")||teamStr.includes("Ouzbékistan")) return "#D500F9";
+    return "#00E5FF";
   };
 
   return (
@@ -504,8 +496,8 @@ function Splash({ onDone }) {
 
           {team && (
             <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10, maxWidth:480, margin:"0 auto", animation:"slideUp 0.35s ease" }}>
-              <div style={{ margin:"0 14px 8px", background:`linear-gradient(135deg,#0a0a0a,#111120)`, border:`2px solid ${getTeamConfColor(team)}`, borderRadius:18, padding:"16px 18px", overflow:"hidden", position:"relative" }}>
-                <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 30% 50%, ${getTeamConfColor(team)}18, transparent 70%)`, pointerEvents:"none" }} />
+              <div style={{ margin:"0 14px 8px", background:`linear-gradient(135deg,#0a0a0a,#111120)`, border:`2px solid ${getConfColor(team)}`, borderRadius:18, padding:"16px 18px", overflow:"hidden", position:"relative" }}>
+                <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 30% 50%, ${getConfColor(team)}18, transparent 70%)`, pointerEvents:"none" }} />
                 <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                   <div style={{ fontSize:52, lineHeight:1, filter:"drop-shadow(0 0 20px rgba(255,255,255,0.3))" }}>
                     {team.split(" ")[0]}
@@ -558,10 +550,10 @@ function Countdown({ T }) {
       <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${A.gold}10,transparent 70%)` }} />
       <div style={{ position:"absolute", top:0, left:"10%", right:"10%", height:1.5, background:`linear-gradient(90deg,transparent,${A.gold}88,transparent)` }} />
       <div style={{ textAlign:"center", marginBottom:12, fontSize:10, fontWeight:900, letterSpacing:3, color:A.gold }}>🦁 SÉNÉGAL × FRANCE · 16 JUIN 2026</div>
-      <div style={{ display:"flex", justifyContent:"center", gap:12 }}>
+      <div style={{ display:"flex", justifyContent:"center", gap:8 }}>
         {[["JOURS",t.d],["H",t.h],["MIN",t.m],["SEC",t.s]].map(([l,v]) => (
-          <div key={l} style={{ textAlign:"center", minWidth:52 }}>
-            <div style={{ fontSize:36, fontWeight:900, fontFamily:"monospace", color:A.gold, textShadow:`0 0 30px ${A.gold}55`, lineHeight:1 }}>{String(v).padStart(2,"0")}</div>
+          <div key={l} style={{ textAlign:"center", flex:1 }}>
+            <div style={{ fontSize:30, fontWeight:900, fontFamily:"monospace", color:A.gold, textShadow:`0 0 30px ${A.gold}55`, lineHeight:1 }}>{String(v).padStart(2,"0")}</div>
             <div style={{ fontSize:11, color:T.muted, letterSpacing:1.5, marginTop:3 }}>{l}</div>
           </div>
         ))}
@@ -683,6 +675,7 @@ const GROUPS_SCHEDULE = [
     ]},
 ];
 
+/* ══ GROUP STANDINGS ══ */
 const GROUP_STANDINGS = {
   A: [
     { team:"🇺🇸 États-Unis",  j:2, v:1, n:1, d:0, bp:3, bc:1, pts:4, form:["V","N"] },
@@ -776,26 +769,6 @@ const CDM_FORMAT_2026 = {
   novelty: "1er Mondial à 48 équipes · 3 pays organisateurs · 104 matchs au total",
 };
 
-/* ══ REACTIONS ══ */
-function ReactionsWidget({ T }) {
-  const [counts, setCounts] = useState({"🔥":8423,"⚽":5211,"🦁":12890,"😱":3402,"❤️":7654,"👑":2341,"🙏":4503,"💯":6781});
-  const [burst, setBurst] = useState(null);
-  const react = r => { setCounts(p=>({...p,[r]:p[r]+1})); setBurst(r); setTimeout(()=>setBurst(null),500); };
-  return (
-    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginTop:12 }}>
-      <div style={{ fontSize:10, color:A.red, fontWeight:800, letterSpacing:2, marginBottom:12, display:"flex", alignItems:"center", gap:6 }}><Dot/>RÉACTIONS LIVE</div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
-        {["🔥","⚽","🦁","😱","❤️","👑","🙏","💯"].map(r => (
-          <button key={r} onClick={()=>react(r)} style={{ background:burst===r?T.card2:T.bg, border:`1px solid ${burst===r?A.gold+"55":T.border}`, borderRadius:12, padding:"10px 4px", cursor:"pointer", textAlign:"center", transform:burst===r?"scale(1.15)":"scale(1)", transition:"all 0.15s" }}>
-            <div style={{ fontSize:20 }}>{r}</div>
-            <div style={{ fontSize:10, fontWeight:700, color:A.gold, fontFamily:"monospace", marginTop:2 }}>{counts[r]>9999?(counts[r]/1000).toFixed(1)+"k":counts[r].toLocaleString()}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ══ MATCHES TAB ══ */
 function MatchesTab({ T, user }) {
   const [view, setView] = useState("live");
@@ -813,9 +786,9 @@ function MatchesTab({ T, user }) {
 
       {view==="live" && (
         <div>
-          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:6, marginBottom:16 }}>
-            {[["matches","⚽ Matchs"],["standings","🏆 Classements"],["h2h","⚔️ H2H Séné-France"],["players","⭐ Stars"],["fanzone","📍 Fan Zones"],["format","📋 Format 2026"],["wolof","🦁 Wolof"]].map(([sv,sl]) => (
-              <button key={sv} onClick={()=>setSubLive(sv)} style={{ flexShrink:0, padding:"6px 12px", borderRadius:20, border:`1px solid ${subLive===sv?A.gold:T.border}`, background:subLive===sv?A.gold+"18":"transparent", color:subLive===sv?A.gold:T.muted, fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>{sl}</button>
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:6, marginBottom:16, WebkitOverflowScrolling:"touch" }}>
+            {[["matches","⚽ Matchs"],["standings","🏆 Classements"],["h2h","⚔️ H2H"],["players","⭐ Stars"],["fanzone","📍 Fan Zones"],["format","📋 Format"],["wolof","🦁 Wolof"]].map(([sv,sl]) => (
+              <button key={sv} onClick={()=>setSubLive(sv)} style={{ flexShrink:0, padding:"6px 10px", borderRadius:20, border:`1px solid ${subLive===sv?A.gold:T.border}`, background:subLive===sv?A.gold+"18":"transparent", color:subLive===sv?A.gold:T.muted, fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>{sl}</button>
             ))}
           </div>
 
@@ -826,7 +799,7 @@ function MatchesTab({ T, user }) {
                 const isLive=m.status==="live",isHot=m.status==="hot",isSn=m.status==="sn";
                 const ac=isHot?A.gold:isLive?A.red:isSn?A.green:T.border;
                 return (
-                  <div key={i} style={{ background:isHot&&T.bg==="#05050A"?"linear-gradient(135deg,#160b00,#0c0c14,#001408)":T.card, border:`1px solid ${ac}${isHot||isLive?"55":"22"}`, borderRadius:15, padding:"14px 16px", marginBottom:10, position:"relative", overflow:"hidden" }}>
+                  <div key={i} style={{ background:isHot&&T.bg==="#05050A"?"linear-gradient(135deg,#160b00,#0c0c14,#001408)":T.card, border:`1px solid ${ac}${isHot||isLive?"55":"22"}`, borderRadius:15, padding:"12px 14px", marginBottom:10, position:"relative", overflow:"hidden" }}>
                     {(isHot||isSn)&&<div style={{ position:"absolute", top:0, left:0, right:0, height:1.5, background:`linear-gradient(90deg,transparent,${ac},transparent)` }} />}
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:9 }}>
                       <span style={{ fontSize:12, color:T.muted, fontFamily:"monospace" }}>GROUPE {m.group} · {m.venue.split(",")[0]}</span>
@@ -1026,10 +999,10 @@ function MatchesTab({ T, user }) {
       {view==="schedule" && (
         <div>
           <div style={{ fontSize:11, color:T.muted, letterSpacing:2, fontWeight:700, marginBottom:12 }}>12 GROUPES · 72 MATCHS · PHASE DE POULES</div>
-          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:16 }}>
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:16, WebkitOverflowScrolling:"touch" }}>
             {GROUPS_SCHEDULE.map(g => (
               <button key={g.group} onClick={()=>setSelGroup(g.group)} style={{
-                flexShrink:0, width:44, height:44, borderRadius:12, border:`2px solid ${selGroup===g.group ? g.color : T.border}`,
+                flexShrink:0, width:40, height:40, borderRadius:11, border:`2px solid ${selGroup===g.group ? g.color : T.border}`,
                 background: selGroup===g.group ? g.color+"18" : T.card,
                 color: selGroup===g.group ? g.color : T.muted,
                 fontWeight:900, fontSize:14, cursor:"pointer", transition:"all 0.2s",
@@ -1110,6 +1083,26 @@ function MatchesTab({ T, user }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ══ REACTIONS ══ */
+function ReactionsWidget({ T }) {
+  const [counts, setCounts] = useState({"🔥":8423,"⚽":5211,"🦁":12890,"😱":3402,"❤️":7654,"👑":2341,"🙏":4503,"💯":6781});
+  const [burst, setBurst] = useState(null);
+  const react = r => { setCounts(p=>({...p,[r]:p[r]+1})); setBurst(r); setTimeout(()=>setBurst(null),500); };
+  return (
+    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginTop:12 }}>
+      <div style={{ fontSize:10, color:A.red, fontWeight:800, letterSpacing:2, marginBottom:12, display:"flex", alignItems:"center", gap:6 }}><Dot/>RÉACTIONS LIVE</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+        {["🔥","⚽","🦁","😱","❤️","👑","🙏","💯"].map(r => (
+          <button key={r} onClick={()=>react(r)} style={{ background:burst===r?T.card2:T.bg, border:`1px solid ${burst===r?A.gold+"55":T.border}`, borderRadius:12, padding:"10px 4px", cursor:"pointer", textAlign:"center", transform:burst===r?"scale(1.15)":"scale(1)", transition:"all 0.15s" }}>
+            <div style={{ fontSize:20 }}>{r}</div>
+            <div style={{ fontSize:10, fontWeight:700, color:A.gold, fontFamily:"monospace", marginTop:2 }}>{counts[r]>9999?(counts[r]/1000).toFixed(1)+"k":counts[r].toLocaleString()}</div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1313,7 +1306,9 @@ function HistoryTab({ T }) {
                   <span style={{ fontSize:11, color:A.green, fontWeight:800 }}>🦁 LIONS ICI</span>
                 </div>
               )}
-              <div style={{ marginLeft:"auto", fontSize:11, color:T.muted, fontWeight:600 }}>Voir tout →</div>
+              <div style={{ marginLeft:"auto", fontSize:11, color:T.muted, fontWeight:600 }}>
+                Voir tout →
+              </div>
             </div>
           </div>
         ))}
@@ -1322,21 +1317,30 @@ function HistoryTab({ T }) {
   );
 }
 
-/* ══ CDM STATS DATA ══ */
+/* ══ CDM EDITION STATS ══ */
 const CDM_STATS = [
-  { year:1930, topScorer:"Stábile 🇦🇷", goals:8,  bestPlayer:"José Nasazzi 🇺🇾",   bestGK:"Enrique Ballestrero 🇺🇾", bestYoung:"—", goals_total:70,  teams:13, matches:18, avg:3.9, champion:"🇺🇾 Uruguay",   topTeamScored:"🇺🇸 USA (6/3m)",    topTeamConc:"🇺🇸 USA (13 enc.)" },
-  { year:1950, topScorer:"Ademir 🇧🇷",   goals:9,  bestPlayer:"Zizinho 🇧🇷",       bestGK:"Roque Máspoli 🇺🇾",      bestYoung:"—", goals_total:88,  teams:13, matches:22, avg:4.0, champion:"🇺🇾 Uruguay",   topTeamScored:"🇺🇾 Uruguay (15)", topTeamConc:"🇧🇴 Bolivie (8/3m)" },
-  { year:1958, topScorer:"Fontaine 🇫🇷", goals:13, bestPlayer:"Didi 🇧🇷",          bestGK:"Harry Gregg 🏴󠁧󠁢󠁮󠁩󠁲󠁿",       bestYoung:"Pelé 🇧🇷 (17 ans)", goals_total:126, teams:16, matches:35, avg:3.6, champion:"🇧🇷 Brésil",    topTeamScored:"🇫🇷 France (23)",  topTeamConc:"🇦🇹 Autriche (14 enc.)" },
-  { year:1970, topScorer:"Müller 🇩🇪",   goals:10, bestPlayer:"Pelé 🇧🇷",          bestGK:"Ladislao Mazurkiewicz 🇺🇾",bestYoung:"—", goals_total:95,  teams:16, matches:32, avg:3.0, champion:"🇧🇷 Brésil",    topTeamScored:"🇧🇷 Brésil (19)", topTeamConc:"🇸🇻 Salvador (9/3m)" },
-  { year:1986, topScorer:"Lineker 🏴󠁧󠁢󠁥󠁮󠁧󠁿",goals:6, bestPlayer:"Diego Maradona 🇦🇷",bestGK:"Harald Schumacher 🇩🇪",  bestYoung:"—", goals_total:132, teams:24, matches:52, avg:2.5, champion:"🇦🇷 Argentine", topTeamScored:"🇩🇪 All. (15)",    topTeamConc:"🇧🇬 Bulgarie (10 enc.)" },
-  { year:1994, topScorer:"Salenko 🇷🇺",  goals:6,  bestPlayer:"Romário 🇧🇷",        bestGK:"Michel Preud'homme 🇧🇪", bestYoung:"Marc Overmars 🇳🇱", goals_total:141, teams:24, matches:52, avg:2.7, champion:"🇧🇷 Brésil",    topTeamScored:"🇩🇪 All. (15)",    topTeamConc:"🇸🇦 Arabie S. (12 enc.)" },
-  { year:1998, topScorer:"Šuker 🇭🇷",    goals:6,  bestPlayer:"Ronaldo 🇧🇷",        bestGK:"Fabien Barthez 🇫🇷",     bestYoung:"Michael Owen 🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals_total:171, teams:32, matches:64, avg:2.7, champion:"🇫🇷 France",    topTeamScored:"🇩🇪 All. (14)",    topTeamConc:"🇾🇬 Yougoslavie (10 enc.)" },
-  { year:2002, topScorer:"Ronaldo 🇧🇷",  goals:8,  bestPlayer:"Oliver Kahn 🇩🇪",   bestGK:"Oliver Kahn 🇩🇪",        bestYoung:"Landon Donovan 🇺🇸", goals_total:161, teams:32, matches:64, avg:2.5, champion:"🇧🇷 Brésil",    topTeamScored:"🇧🇷 Brésil (18)", topTeamConc:"🇸🇦 Arabie S. (12 enc.)", senegal:"⚡ Sénégal bat France 1-0 · 8e de finale" },
-  { year:2006, topScorer:"Klose 🇩🇪",    goals:5,  bestPlayer:"Zinédine Zidane 🇫🇷",bestGK:"Gianluigi Buffon 🇮🇹",   bestYoung:"Lukas Podolski 🇩🇪", goals_total:147, teams:32, matches:64, avg:2.3, champion:"🇮🇹 Italie",    topTeamScored:"🇩🇪 All. (14)",    topTeamConc:"🇸🇦 Arabie S. (8 enc.)" },
-  { year:2010, topScorer:"T.Müller 🇩🇪", goals:5,  bestPlayer:"Diego Forlán 🇺🇾",  bestGK:"Iker Casillas 🇪🇸",      bestYoung:"Thomas Müller 🇩🇪", goals_total:145, teams:32, matches:64, avg:2.3, champion:"🇪🇸 Espagne",   topTeamScored:"🇩🇪 All. (16)",    topTeamConc:"🇰🇵 Corée N (12/3m)" },
-  { year:2014, topScorer:"J.Rodríguez 🇨🇴",goals:6,bestPlayer:"Lionel Messi 🇦🇷",  bestGK:"Manuel Neuer 🇩🇪",       bestYoung:"Paul Pogba 🇫🇷",   goals_total:171, teams:32, matches:64, avg:2.7, champion:"🇩🇪 Allemagne", topTeamScored:"🇩🇪 All. (18)",    topTeamConc:"🇧🇷 Brésil (14 enc.)" },
-  { year:2018, topScorer:"Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿",   goals:6,  bestPlayer:"Luka Modrić 🇭🇷",   bestGK:"Thibaut Courtois 🇧🇪",   bestYoung:"Kylian Mbappé 🇫🇷", goals_total:169, teams:32, matches:64, avg:2.6, champion:"🇫🇷 France",    topTeamScored:"🇧🇪 Belgique (16)",topTeamConc:"🇵🇦 Panama (11 enc.)", senegal:"💔 Éliminé par fair-play · 1 carton jaune de trop" },
-  { year:2022, topScorer:"Mbappé 🇫🇷",   goals:8,  bestPlayer:"Lionel Messi 🇦🇷",  bestGK:"Dominik Livaković 🇭🇷",  bestYoung:"Gavi 🇪🇸",          goals_total:172, teams:32, matches:64, avg:2.7, champion:"🇦🇷 Argentine", topTeamScored:"🇫🇷 France (16)",  topTeamConc:"🇨🇷 Costa Rica (11 enc.)", senegal:"🦁 8e de finale · Sans Mané · Tête haute" },
+  { year:1930, topScorer:"Stábile 🇦🇷", goals:8,  assist:"—",               bestPlayer:"José Nasazzi 🇺🇾",   bestGK:"Enrique Ballestrero 🇺🇾", bestYoung:"—",               goals_total:70,  teams:13, matches:18, avg:3.9, champion:"🇺🇾 Uruguay",   topTeamScored:"🇺🇸 USA (6/3m)",    topTeamConc:"🇺🇸 USA (13 enc.)" },
+  { year:1934, topScorer:"Nejedlý 🇨🇿",  goals:5,  assist:"—",               bestPlayer:"Giuseppe Meazza 🇮🇹",bestGK:"Ricardo Zamora 🇪🇸",     bestYoung:"—",               goals_total:70,  teams:16, matches:17, avg:4.1, champion:"🇮🇹 Italie",    topTeamScored:"🇩🇪 Allemagne",     topTeamConc:"🇩🇪 Allemagne" },
+  { year:1938, topScorer:"Léonidas 🇧🇷", goals:8,  assist:"—",               bestPlayer:"Leônidas 🇧🇷",      bestGK:"—",                      bestYoung:"—",               goals_total:84,  teams:15, matches:18, avg:4.7, champion:"🇮🇹 Italie",    topTeamScored:"🇧🇷 Brésil",        topTeamConc:"🇨🇺 Cuba (12 enc.)" },
+  { year:1950, topScorer:"Ademir 🇧🇷",   goals:9,  assist:"—",               bestPlayer:"Zizinho 🇧🇷",       bestGK:"Roque Máspoli 🇺🇾",      bestYoung:"—",               goals_total:88,  teams:13, matches:22, avg:4.0, champion:"🇺🇾 Uruguay",   topTeamScored:"🇺🇾 Uruguay (15)", topTeamConc:"🇧🇴 Bolivie (8/3m)" },
+  { year:1954, topScorer:"Kocsis 🇭🇺",   goals:11, assist:"—",               bestPlayer:"Ferenc Puskás 🇭🇺", bestGK:"Gyula Grosics 🇭🇺",      bestYoung:"—",               goals_total:140, teams:16, matches:26, avg:5.4, champion:"🇩🇪 Allemagne", topTeamScored:"🇩🇪 All. (25)",    topTeamConc:"🇰🇷 Corée (16 enc.)" },
+  { year:1958, topScorer:"Fontaine 🇫🇷", goals:13, assist:"Pelé 🇧🇷",        bestPlayer:"Didi 🇧🇷",          bestGK:"Harry Gregg 🏴󠁧󠁢󠁮󠁩󠁲󠁿",       bestYoung:"Pelé 🇧🇷 (17 ans)", goals_total:126, teams:16, matches:35, avg:3.6, champion:"🇧🇷 Brésil",    topTeamScored:"🇫🇷 France (23)",  topTeamConc:"🇦🇹 Autriche (14 enc.)" },
+  { year:1962, topScorer:"Garrincha+Vavá 🇧🇷", goals:4, assist:"Garrincha 🇧🇷", bestPlayer:"Garrincha 🇧🇷", bestGK:"Viliam Schrojf 🇨🇿",   bestYoung:"—",               goals_total:89,  teams:16, matches:32, avg:2.8, champion:"🇧🇷 Brésil",    topTeamScored:"🇧🇷 Brésil (14)", topTeamConc:"🇨🇴 Colombie (11 enc.)" },
+  { year:1966, topScorer:"Eusébio 🇵🇹",  goals:9,  assist:"Eusébio 🇵🇹",     bestPlayer:"Bobby Charlton 🏴󠁧󠁢󠁥󠁮󠁧󠁿",bestGK:"Gordon Banks 🏴󠁧󠁢󠁥󠁮󠁧󠁿",   bestYoung:"—",               goals_total:89,  teams:16, matches:32, avg:2.8, champion:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Angleterre",topTeamScored:"🇵🇹 Portugal (17)",topTeamConc:"🇰🇵 Corée N (21 enc.)" },
+  { year:1970, topScorer:"Müller 🇩🇪",   goals:10, assist:"Pelé 🇧🇷",        bestPlayer:"Pelé 🇧🇷",          bestGK:"Ladislao Mazurkiewicz 🇺🇾",bestYoung:"—",             goals_total:95,  teams:16, matches:32, avg:3.0, champion:"🇧🇷 Brésil",    topTeamScored:"🇧🇷 Brésil (19)", topTeamConc:"🇸🇻 Salvador (9/3m)" },
+  { year:1974, topScorer:"Lato 🇵🇱",     goals:7,  assist:"Cruyff 🇳🇱",      bestPlayer:"Johan Cruyff 🇳🇱",  bestGK:"Jan Jongbloed 🇳🇱",      bestYoung:"—",               goals_total:97,  teams:16, matches:38, avg:2.6, champion:"🇩🇪 Allemagne", topTeamScored:"🇵🇱 Pologne (16)", topTeamConc:"🇭🇹 Haïti (14 enc.)" },
+  { year:1978, topScorer:"Kempes 🇦🇷",   goals:6,  assist:"Kempes 🇦🇷",      bestPlayer:"Mario Kempes 🇦🇷",  bestGK:"Ubaldo Fillol 🇦🇷",      bestYoung:"—",               goals_total:102, teams:16, matches:38, avg:2.7, champion:"🇦🇷 Argentine", topTeamScored:"🇦🇷 Argentine (15)",topTeamConc:"🇲🇽 Mexique (12 enc.)" },
+  { year:1982, topScorer:"Rossi 🇮🇹",    goals:6,  assist:"Platini 🇫🇷",     bestPlayer:"Paolo Rossi 🇮🇹",   bestGK:"Dino Zoff 🇮🇹",          bestYoung:"—",               goals_total:146, teams:24, matches:52, avg:2.8, champion:"🇮🇹 Italie",    topTeamScored:"🇫🇷 France (16)",  topTeamConc:"🇳🇿 Zélande (12 enc.)" },
+  { year:1986, topScorer:"Lineker 🏴󠁧󠁢󠁥󠁮󠁧󠁿",goals:6, assist:"Maradona 🇦🇷",  bestPlayer:"Diego Maradona 🇦🇷",bestGK:"Harald Schumacher 🇩🇪",  bestYoung:"—",               goals_total:132, teams:24, matches:52, avg:2.5, champion:"🇦🇷 Argentine", topTeamScored:"🇩🇪 All. (15)",    topTeamConc:"🇧🇬 Bulgarie (10 enc.)" },
+  { year:1990, topScorer:"Schillaci 🇮🇹",goals:6,  assist:"Baggio 🇮🇹",      bestPlayer:"Salvatore Schillaci 🇮🇹",bestGK:"Sergio Goycochea 🇦🇷",bestYoung:"—",             goals_total:115, teams:24, matches:52, avg:2.2, champion:"🇩🇪 Allemagne", topTeamScored:"🇩🇪 All. (15)",    topTeamConc:"🇦🇪 EAU (11 enc.)" },
+  { year:1994, topScorer:"Salenko 🇷🇺",  goals:6,  assist:"Baggio 🇮🇹",      bestPlayer:"Romário 🇧🇷",        bestGK:"Michel Preud'homme 🇧🇪", bestYoung:"Marc Overmars 🇳🇱",goals_total:141, teams:24, matches:52, avg:2.7, champion:"🇧🇷 Brésil",    topTeamScored:"🇩🇪 All. (15)",    topTeamConc:"🇸🇦 Arabie S. (12 enc.)" },
+  { year:1998, topScorer:"Šuker 🇭🇷",    goals:6,  assist:"Zidane 🇫🇷",      bestPlayer:"Ronaldo 🇧🇷",        bestGK:"Fabien Barthez 🇫🇷",     bestYoung:"Michael Owen 🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals_total:171, teams:32, matches:64, avg:2.7, champion:"🇫🇷 France",    topTeamScored:"🇩🇪 All. (14)",    topTeamConc:"🇾🇺 Yougoslavie (10 enc.)" },
+  { year:2002, topScorer:"Ronaldo 🇧🇷",  goals:8,  assist:"Rivaldo 🇧🇷",     bestPlayer:"Oliver Kahn 🇩🇪",   bestGK:"Oliver Kahn 🇩🇪",        bestYoung:"Landon Donovan 🇺🇸",goals_total:161, teams:32, matches:64, avg:2.5, champion:"🇧🇷 Brésil",    topTeamScored:"🇧🇷 Brésil (18)", topTeamConc:"🇸🇦 Arabie S. (12 enc.)", senegal:"⚡ Sénégal bat France 1-0 · 8e de finale" },
+  { year:2006, topScorer:"Klose 🇩🇪",    goals:5,  assist:"Zidane 🇫🇷",      bestPlayer:"Zinédine Zidane 🇫🇷",bestGK:"Gianluigi Buffon 🇮🇹",   bestYoung:"Lukas Podolski 🇩🇪",goals_total:147, teams:32, matches:64, avg:2.3, champion:"🇮🇹 Italie",    topTeamScored:"🇩🇪 All. (14)",    topTeamConc:"🇸🇦 Arabie S. (8 enc.)" },
+  { year:2010, topScorer:"T.Müller 🇩🇪", goals:5,  assist:"Iniesta 🇪🇸",     bestPlayer:"Diego Forlán 🇺🇾",  bestGK:"Iker Casillas 🇪🇸",      bestYoung:"Thomas Müller 🇩🇪",goals_total:145, teams:32, matches:64, avg:2.3, champion:"🇪🇸 Espagne",   topTeamScored:"🇩🇪 All. (16)",    topTeamConc:"🇰🇵 Corée N (12/3m)" },
+  { year:2014, topScorer:"J.Rodríguez 🇨🇴",goals:6,assist:"T.Müller 🇩🇪",   bestPlayer:"Lionel Messi 🇦🇷",  bestGK:"Manuel Neuer 🇩🇪",       bestYoung:"Paul Pogba 🇫🇷",   goals_total:171, teams:32, matches:64, avg:2.7, champion:"🇩🇪 Allemagne", topTeamScored:"🇩🇪 All. (18)",    topTeamConc:"🇧🇷 Brésil (14 enc.)" },
+  { year:2018, topScorer:"Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿",   goals:6,  assist:"De Bruyne 🇧🇪",  bestPlayer:"Luka Modrić 🇭🇷",   bestGK:"Thibaut Courtois 🇧🇪",   bestYoung:"Kylian Mbappé 🇫🇷",goals_total:169, teams:32, matches:64, avg:2.6, champion:"🇫🇷 France",    topTeamScored:"🇧🇪 Belgique (16)",topTeamConc:"🇵🇦 Panama (11 enc.)", senegal:"💔 Éliminé par fair-play · 1 carton jaune de trop" },
+  { year:2022, topScorer:"Mbappé 🇫🇷",   goals:8,  assist:"Messi 🇦🇷",       bestPlayer:"Lionel Messi 🇦🇷",  bestGK:"Dominik Livaković 🇭🇷",  bestYoung:"Gavi 🇪🇸",          goals_total:172, teams:32, matches:64, avg:2.7, champion:"🇦🇷 Argentine", topTeamScored:"🇫🇷 France (16)",  topTeamConc:"🇨🇷 Costa Rica (11 enc.)", senegal:"🦁 8e de finale · Sans Mané · Tête haute" },
 ];
 
 const ALL_TIME_SCORERS = [
@@ -1406,7 +1410,7 @@ function LegendsTab({ T }) {
   const [selEdition, setSelEdition] = useState(null);
 
   return (
-    <div style={{ animation:"fadeIn 0.3s ease" }}>
+    <div style={{ animation:"fadeIn 0.3s ease", width:"100%", overflowX:"hidden" }}>
       <div style={{ display:"flex", gap:6, marginBottom:16 }}>
         {[["world","🌍 Hall of Fame"],["stats","📊 Stats CDM"],["lions","🦁 Lions"]].map(([v,l])=>(
           <button key={v} onClick={()=>{setView(v);setSel(null);setSelEdition(null);}} style={{ flex:1, padding:"8px 4px", borderRadius:10, border:`1px solid ${view===v?A.gold:T.border}`, background:view===v?A.gold+"14":"transparent", color:view===v?A.gold:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{l}</button>
@@ -1488,6 +1492,15 @@ function LegendsTab({ T }) {
                       <div style={{ fontSize:22, fontWeight:900, fontFamily:"monospace", color:l.color }}>{l.goals}</div>
                       <div style={{ fontSize:9, color:T.muted }}>{l.ratio}/m · {l.matches}M</div>
                     </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background:T.card, border:`1px solid ${A.red}22`, borderRadius:14, padding:14 }}>
+                <div style={{ fontSize:11, color:A.red, fontWeight:800, letterSpacing:2, marginBottom:8 }}>⚡ RECORDS EN 1 TOURNOI</div>
+                {[{n:"Just Fontaine 🇫🇷",v:"13 buts",sub:"1958 · 6 matchs · INTOUCHABLE",c:A.red},{n:"Sándor Kocsis 🇭🇺",v:"11 buts",sub:"1954 · 5 matchs · Perfection",c:A.gold},{n:"Gerd Müller 🇩🇪",v:"10 buts",sub:"1970 · 6 matchs · Der Bomber",c:A.orange}].map((r,i)=>(
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:i<2?`1px solid ${T.border}`:"none" }}>
+                    <div><div style={{ fontSize:13, fontWeight:700, color:T.text }}>{r.n}</div><div style={{ fontSize:11, color:T.muted }}>{r.sub}</div></div>
+                    <div style={{ fontSize:18, fontWeight:900, fontFamily:"monospace", color:r.c }}>{r.v}</div>
                   </div>
                 ))}
               </div>
@@ -1809,12 +1822,10 @@ function LiveScoreWidget({ T }) {
         <div style={{ background:A.gold+"0A", border:`1px solid ${A.gold}33`, borderRadius:12, padding:14, marginBottom:12 }}>
           <div style={{ fontSize:12, fontWeight:700, color:A.gold, marginBottom:6 }}>🔑 Activer les données live</div>
           <div style={{ fontSize:12, color:T.muted, lineHeight:1.6, marginBottom:10 }}>
-            <div>1. Crée un compte gratuit sur <span style={{ color:A.blue }}>rapidapi.com/api-sports</span></div>
-            <div>2. Abonne-toi à API-Football (plan Free : 100 req/jour)</div>
-            <div>3. Copie ta clé API dans le code (<span style={{ fontFamily:"monospace", color:A.gold }}>DATA_CONFIG.API_FOOTBALL_KEY</span>)</div>
+            Inscris-toi sur rapidapi.com/api-sports et colle ta clé dans DATA_CONFIG.API_FOOTBALL_KEY
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            {[["🆓 API-Football Free","100 req/jour · Scores live · Stats"],["💎 API-Football Pro","10$/mois · Illimité · OPTA-grade"]].map(([t,s],i)=>(
+            {[["🆓 Free","100 req/jour · Scores live"],["💎 Pro","10$/mois · Illimité"]].map(([t,s],i)=>(
               <div key={i} style={{ flex:1, background:T.bg, borderRadius:10, padding:"10px 10px" }}>
                 <div style={{ fontSize:11, fontWeight:800, color:i===0?A.green:A.gold }}>{t}</div>
                 <div style={{ fontSize:10, color:T.muted, marginTop:3 }}>{s}</div>
@@ -1845,7 +1856,7 @@ function LiveScoreWidget({ T }) {
       )}
 
       {hasApiKey && liveData && liveData.length === 0 && (
-        <div style={{ textAlign:"center", padding:"12px 0", fontSize:13, color:T.muted }}>Aucun match en cours — prochains matchs bientôt 🕐</div>
+        <div style={{ textAlign:"center", padding:"12px 0", fontSize:13, color:T.muted }}>Aucun match en cours 🕐</div>
       )}
 
       {hasApiKey && topScorers && topScorers.length > 0 && (
@@ -1871,48 +1882,6 @@ function LiveScoreWidget({ T }) {
           Mis à jour : {lastUpdate.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit",second:"2-digit"})}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ══ DATA SOURCES INFO ══ */
-function DataSourcesInfo({ T }) {
-  const sources = [
-    { name:"API-Football", desc:"Scores live · Stats match · Classements", tier:"Gratuit 100 req/j", color:A.green, icon:"⚡", url:"rapidapi.com/api-sports" },
-    { name:"football-data.org", desc:"Fixtures · Résultats · Équipes", tier:"Gratuit 10 req/min", color:A.blue, icon:"📊", url:"football-data.org" },
-    { name:"Claude AI (Anthropic)", desc:"Analyse tactique · Prédictions · Commentaire live", tier:"Intégré", color:A.purple, icon:"🤖", url:"anthropic.com" },
-    { name:"OPTA Sports (Stats Perform)", desc:"Stats pro-grade · xG · Heatmaps · Passes réseau", tier:"Entreprise ~50k$/an", color:A.gold, icon:"🏆", url:"statsperform.com" },
-    { name:"Wyscout / InStat", desc:"Vidéo analyse · Recrutement · Stats avancées", tier:"Pro ~5k$/an", color:A.orange, icon:"🎥", url:"wyscout.com" },
-    { name:"Sofascore API", desc:"Scores · Notations joueurs · Timeline", tier:"Gratuit limité", color:"#f97316", icon:"📱", url:"sofascore.com" },
-  ];
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-      <div style={{ fontSize:11, color:T.muted, letterSpacing:1.5, fontWeight:700, marginBottom:4 }}>🌐 SOURCES DE DONNÉES DISPONIBLES</div>
-      {sources.map((s,i) => (
-        <div key={i} style={{ background:T.card, border:`1px solid ${s.color}33`, borderRadius:14, padding:14, display:"flex", gap:12, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:s.color+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{s.icon}</div>
-          <div style={{ flex:1 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-              <div style={{ fontSize:13, fontWeight:800, color:T.text }}>{s.name}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:s.color, background:s.color+"14", padding:"2px 8px", borderRadius:20, flexShrink:0, marginLeft:6 }}>{s.tier}</div>
-            </div>
-            <div style={{ fontSize:12, color:T.muted, marginTop:3 }}>{s.desc}</div>
-            <div style={{ fontSize:10, color:s.color, marginTop:4, fontFamily:"monospace" }}>{s.url}</div>
-          </div>
-        </div>
-      ))}
-      <div style={{ background:T.card, border:`1px solid ${A.green}33`, borderRadius:14, padding:14 }}>
-        <div style={{ fontSize:11, color:A.green, fontWeight:800, letterSpacing:1.5, marginBottom:8 }}>💡 RECOMMANDATION POUR LIONS ARENA</div>
-        <div style={{ fontSize:12, color:T.muted, lineHeight:1.7 }}>
-          Pour démarrer : <span style={{ color:A.green, fontWeight:700 }}>API-Football Free</span> (scores + classements) + <span style={{ color:A.purple, fontWeight:700 }}>Claude AI</span> (analyses).
-        </div>
-        <div style={{ fontSize:12, color:T.muted, lineHeight:1.7, marginTop:6 }}>
-          Pour scaler : <span style={{ color:A.gold, fontWeight:700 }}>API-Football Pro (10$/mois)</span> donne des données comparables à OPTA pour un centième du prix — xG, passes, heatmaps, stats joueurs.
-        </div>
-        <div style={{ fontSize:12, color:T.muted, lineHeight:1.7, marginTop:6 }}>
-          OPTA c'est pour les clubs de Premier League et les chaînes TV. Notre stack est 100× moins cher et presque aussi puissant.
-        </div>
-      </div>
     </div>
   );
 }
@@ -1945,11 +1914,10 @@ function AITab({ T, user }) {
     predict:{ label:"⚡ Prédiction",    color:A.green,  prompt:PROMPTS.predict },
     analyze:{ label:"📊 Analyse Lions", color:A.blue,   prompt:PROMPTS.analyze },
     live:   { label:"🎙️ Commentaire",   color:A.red,    prompt:null },
-    data:   { label:"🌐 Sources Data",  color:A.gold,   prompt:null },
   };
 
   return (
-    <div style={{ animation:"fadeIn 0.3s ease" }}>
+    <div style={{ animation:"fadeIn 0.3s ease", width:"100%", overflowX:"hidden" }}>
       <div style={{ display:"flex", gap:4, overflowX:"auto", paddingBottom:4, marginBottom:16 }}>
         {Object.entries(modeConf).map(([k,v])=>(
           <button key={k} onClick={()=>{setMode(k);setResult(null);setInput("");setChat([]);}} style={{ flexShrink:0, padding:"8px 12px", borderRadius:10, border:`1px solid ${mode===k?v.color:T.border}`, background:mode===k?v.color+"18":"transparent", color:mode===k?v.color:T.muted, fontSize:10, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>{v.label}</button>
@@ -1958,73 +1926,62 @@ function AITab({ T, user }) {
 
       <LiveScoreWidget T={T} />
 
-      {mode === "data" && <DataSourcesInfo T={T} />}
-
-      {mode !== "data" && (
-        <div>
-          <div style={{ background:T.bg==="#05050A"?"linear-gradient(135deg,#040c14,#090f1a)":T.card, border:`1px solid ${modeConf[mode].color}33`, borderRadius:18, padding:20, marginBottom:14 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-              <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.blue},${A.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🤖</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text }}>GPT-LIONS · Powered by Claude</div>
-                <div style={{ fontSize:10, color:T.muted }}>IA officielle de Lions Arena 2026</div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.green} size={8}/><span style={{ fontSize:10, color:A.green, fontWeight:700 }}>EN LIGNE</span></div>
-            </div>
-
-            {mode==="live" && (
-              <>
-                {chat.length>0 && (
-                  <div style={{ maxHeight:220, overflowY:"auto", marginBottom:12, display:"flex", flexDirection:"column", gap:8 }}>
-                    {chat.map((msg,i)=>(
-                      <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:msg.role==="user"?A.blue+"14":T.card2, border:`1px solid ${msg.role==="user"?A.blue+"33":T.border}`, fontSize:12, color:T.text, lineHeight:1.6 }}>
-                        <span style={{ fontSize:9, fontWeight:800, color:msg.role==="user"?A.blue:A.gold, marginBottom:3, display:"block" }}>{msg.role==="user"?"🎙️ "+(user?.name||"Toi"):"🤖 GPT-LIONS"}</span>
-                        {msg.content}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div style={{ display:"flex", gap:8 }}>
-                  <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&run(input)} placeholder="Minute 45, 1-0 Sénégal... Commente !" style={{ flex:1, background:T.input, border:`1px solid ${T.inputBorder}`, color:T.text, borderRadius:10, padding:"10px 14px", fontSize:12, outline:"none" }} />
-                  <button onClick={()=>run(input)} disabled={loading||!input.trim()} style={{ background:`linear-gradient(135deg,${A.red},${A.orange})`, border:"none", color:"#fff", borderRadius:10, padding:"10px 14px", cursor:loading?"not-allowed":"pointer", fontWeight:800, fontSize:14, opacity:loading||!input.trim()?0.5:1 }}>🎙️</button>
-                </div>
-              </>
-            )}
-
-            {mode!=="live" && (
-              <button onClick={()=>run(modeConf[mode].prompt)} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${modeConf[mode].color},${modeConf[mode].color}bb)`, border:"none", color:"#fff", borderRadius:12, padding:"13px", fontWeight:800, fontSize:13, cursor:loading?"not-allowed":"pointer", marginBottom:result||loading?14:0, opacity:loading?0.7:1 }}>
-                {loading?"🤖 GPT-LIONS analyse...":`${modeConf[mode].label} — Lancer`}
-              </button>
-            )}
-
-            {loading && (
-              <div style={{ textAlign:"center", padding:"20px 0" }}>
-                <div style={{ fontSize:28, animation:"ping 1s ease-in-out infinite", display:"inline-block" }}>⚽</div>
-                <div style={{ fontSize:12, color:T.muted, marginTop:8 }}>GPT-LIONS analyse les données...</div>
-              </div>
-            )}
-
-            {result && !loading && (
-              <div style={{ background:T.card2, border:`1px solid ${modeConf[mode].color}33`, borderRadius:12, padding:14, animation:"fadeIn 0.4s ease" }}>
-                <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:modeConf[mode].color, marginBottom:8 }}>🤖 ANALYSE GPT-LIONS</div>
-                <div style={{ fontSize:13, color:T.text, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{result}</div>
-                {mode!=="live" && <button onClick={()=>{setResult(null);run(modeConf[mode].prompt);}} style={{ marginTop:12, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>🔄 Régénérer</button>}
-              </div>
-            )}
+      <div style={{ background:T.bg==="#05050A"?"linear-gradient(135deg,#040c14,#090f1a)":T.card, border:`1px solid ${modeConf[mode].color}33`, borderRadius:18, padding:20, marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+          <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.blue},${A.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🤖</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:T.text }}>GPT-LIONS · Powered by Claude</div>
+            <div style={{ fontSize:10, color:T.muted }}>IA officielle de Lions Arena 2026</div>
           </div>
-
-          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:18 }}>
-            <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:14 }}>📊 MODÈLE IA · SÉNÉGAL VS FRANCE</div>
-            {[{l:"🦁 Victoire Sénégal",p:63,c:A.green},{l:"🤝 Match nul",p:18,c:A.gold},{l:"🇫🇷 Victoire France",p:19,c:A.red}].map((x,i)=>(
-              <div key={i} style={{ marginBottom:13 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}><span style={{ fontSize:13, color:T.text }}>{x.l}</span><span style={{ fontSize:18, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.p}%</span></div>
-                <Bar value={x.p} max={100} color={x.c} T={T} h={7} />
-              </div>
-            ))}
-            <div style={{ fontSize:11, color:T.muted, fontStyle:"italic", marginTop:4 }}>47 variables · xG · Forme 6 mois · Météo NY · Historique · Profondeur de banc</div>
-          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.green} size={8}/><span style={{ fontSize:10, color:A.green, fontWeight:700 }}>EN LIGNE</span></div>
         </div>
-      )}
+
+        {mode==="live" && (
+          <>
+            {chat.length>0 && (
+              <div style={{ maxHeight:220, overflowY:"auto", marginBottom:12, display:"flex", flexDirection:"column", gap:8 }}>
+                {chat.map((msg,i)=>(
+                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:msg.role==="user"?A.blue+"14":T.card2, border:`1px solid ${msg.role==="user"?A.blue+"33":T.border}`, fontSize:12, color:T.text, lineHeight:1.6 }}>
+                    <span style={{ fontSize:9, fontWeight:800, color:msg.role==="user"?A.blue:A.gold, marginBottom:3, display:"block" }}>{msg.role==="user"?"🎙️ "+(user?.name||"Toi"):"🤖 GPT-LIONS"}</span>
+                    {msg.content}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display:"flex", gap:8 }}>
+              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&run(input)} placeholder="Minute 45, 1-0 Sénégal... Commente !" style={{ flex:1, background:T.input, border:`1px solid ${T.inputBorder}`, color:T.text, borderRadius:10, padding:"10px 14px", fontSize:12, outline:"none" }} />
+              <button onClick={()=>run(input)} disabled={loading||!input.trim()} style={{ background:`linear-gradient(135deg,${A.red},${A.orange})`, border:"none", color:"#fff", borderRadius:10, padding:"10px 14px", cursor:loading?"not-allowed":"pointer", fontWeight:800, fontSize:14, opacity:loading||!input.trim()?0.5:1 }}>🎙️</button>
+            </div>
+          </>
+        )}
+
+        {mode!=="live" && (
+          <button onClick={()=>run(modeConf[mode].prompt)} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${modeConf[mode].color},${modeConf[mode].color}bb)`, border:"none", color:"#fff", borderRadius:12, padding:"13px", fontWeight:800, fontSize:13, cursor:loading?"not-allowed":"pointer", marginBottom:result||loading?14:0, opacity:loading?0.7:1 }}>
+            {loading?"🤖 GPT-LIONS analyse...":`${modeConf[mode].label} — Lancer`}
+          </button>
+        )}
+
+        {loading && <div style={{ textAlign:"center", padding:"20px 0" }}><div style={{ fontSize:28, animation:"ping 1s ease-in-out infinite", display:"inline-block" }}>⚽</div><div style={{ fontSize:12, color:T.muted, marginTop:8 }}>GPT-LIONS analyse les données...</div></div>}
+
+        {result && !loading && (
+          <div style={{ background:T.card2, border:`1px solid ${modeConf[mode].color}33`, borderRadius:12, padding:14, animation:"fadeIn 0.4s ease" }}>
+            <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:modeConf[mode].color, marginBottom:8 }}>🤖 ANALYSE GPT-LIONS</div>
+            <div style={{ fontSize:13, color:T.text, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{result}</div>
+            {mode!=="live" && <button onClick={()=>{setResult(null);run(modeConf[mode].prompt);}} style={{ marginTop:12, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>🔄 Régénérer</button>}
+          </div>
+        )}
+      </div>
+
+      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:18 }}>
+        <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:14 }}>📊 MODÈLE IA · SÉNÉGAL VS FRANCE</div>
+        {[{l:"🦁 Victoire Sénégal",p:63,c:A.green},{l:"🤝 Match nul",p:18,c:A.gold},{l:"🇫🇷 Victoire France",p:19,c:A.red}].map((x,i)=>(
+          <div key={i} style={{ marginBottom:13 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}><span style={{ fontSize:13, color:T.text }}>{x.l}</span><span style={{ fontSize:18, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.p}%</span></div>
+            <Bar value={x.p} max={100} color={x.c} T={T} h={7} />
+          </div>
+        ))}
+        <div style={{ fontSize:11, color:T.muted, fontStyle:"italic", marginTop:4 }}>47 variables · xG · Forme 6 mois · Météo NY · Historique · Profondeur de banc</div>
+      </div>
     </div>
   );
 }
@@ -2040,6 +1997,24 @@ export default function App() {
   const [installed, setInstalled] = useState(false);
   const [notifGranted, setNotifGranted] = useState(false);
   const bodyRef = useRef(null);
+
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.textContent = [
+      "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,900&display=swap');",
+      "@keyframes ping { 75%, 100% { transform:scale(2.3); opacity:0; } }",
+      "@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }",
+      "@keyframes fadeOut { to { opacity:0; transform:scale(1.05); } }",
+      "@keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }",
+      "@keyframes particleFloat { from { transform:translateY(0); opacity:0.15; } to { transform:translateY(-20px); opacity:0.35; } }",
+      "* { box-sizing:border-box; margin:0; padding:0; }",
+      "::-webkit-scrollbar { width:2px; } ::-webkit-scrollbar-thumb { background:#333344; border-radius:2px; }",
+      "select option { background:#111120; }",
+      "input::placeholder { color:#5a5a7a; }"
+    ].join(" ");
+    document.head.appendChild(styleEl);
+    return () => document.head.removeChild(styleEl);
+  }, []);
 
   useEffect(() => {
     const onInstallable = () => setInstallable(true);
@@ -2061,7 +2036,7 @@ export default function App() {
       const perm = await Notification.requestPermission();
       setNotifGranted(perm === 'granted');
       if (perm === 'granted') {
-        new Notification('🦁 Lions Arena activé !', {
+        new Notification('Lions Arena - Activé !', {
           body: 'Tu recevras les alertes matchs en temps réel.',
           icon: '/icons/icon-192.png'
         });
@@ -2070,8 +2045,6 @@ export default function App() {
   };
 
   const T = THEMES[isDark?"dark":"light"];
-
-  // FIX: Tab swipe only triggers on the body div; no conflict with inner scrollables
   const tabSwipe = useSwipe(
     () => { if (tab > 0) changeTab(tab - 1); },
     () => { if (tab < TABS.length - 1) changeTab(tab + 1); }
@@ -2082,24 +2055,8 @@ export default function App() {
 
   if(!user) return <Splash onDone={handleDone} />;
 
-  const showBanner = (installable || !notifGranted) && !installed;
-
   return (
-    <div style={{ background:T.bg, color:T.text, fontFamily:"'DM Sans','Segoe UI',sans-serif", position:"fixed", inset:0, maxWidth:480, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,900&display=swap');
-        @keyframes ping{75%,100%{transform:scale(2.3);opacity:0}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeOut{to{opacity:0;transform:scale(1.05)}}
-        @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes particleFloat{from{transform:translateY(0) scale(1);opacity:0.15}to{transform:translateY(-20px) scale(1.5);opacity:0.35}}
-        *{box-sizing:border-box;margin:0;padding:0;max-width:100%}
-img,video{max-width:100%;height:auto}
-        ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#333344;border-radius:2px}
-        select option{background:#111120}
-        input::placeholder{color:#5a5a7a}
-      `}</style>
-
+    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:"sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
       {/* HEADER */}
       <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", position:"sticky", top:0, zIndex:300, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
@@ -2119,8 +2076,8 @@ img,video{max-width:100%;height:auto}
         </div>
       </div>
 
-      {/* FIX: PWA banner — correct JSX structure, no orphan closing tags */}
-      {showBanner && (
+      {/* PWA INSTALL BANNER */}
+      {(installable || !notifGranted) && !installed && (
         <div style={{ background:`linear-gradient(135deg,${A.green}18,${A.gold}0A)`, borderBottom:`1px solid ${A.gold}33`, padding:"10px 18px", display:"flex", gap:10, alignItems:"center" }}>
           <span style={{ fontSize:20 }}>📲</span>
           <div style={{ flex:1 }}>
@@ -2128,22 +2085,14 @@ img,video{max-width:100%;height:auto}
             <div style={{ fontSize:11, color:T.muted }}>Accès direct depuis ton écran d'accueil</div>
           </div>
           <div style={{ display:"flex", gap:6 }}>
-            {installable && (
-              <button onClick={handleInstall} style={{ background:A.gold, border:"none", color:"#000", borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>Installer</button>
-            )}
-            {!notifGranted && (
-              <button onClick={handleNotif} style={{ background:A.green+"22", border:`1px solid ${A.green}44`, color:A.green, borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>🔔</button>
-            )}
+            {installable && <button onClick={handleInstall} style={{ background:A.gold, border:"none", color:"#000", borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>Installer</button>}
+            {!notifGranted && <button onClick={handleNotif} style={{ background:A.green+"22", border:`1px solid ${A.green}44`, color:A.green, borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>🔔</button>}
           </div>
         </div>
       )}
 
-      {/* BODY — FIX: swipe handlers only on outer container, not interfering with inner scrollables */}
-      <div
-        ref={bodyRef}
-        {...tabSwipe}
-        style={{ flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 14px 100px" }}
-      >
+      {/* BODY */}
+      <div ref={bodyRef} {...tabSwipe} style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px" }}>
         <Countdown T={T} />
         {tab===0 && <MatchesTab T={T} user={user} />}
         {tab===1 && <HistoryTab T={T} />}
@@ -2153,7 +2102,7 @@ img,video{max-width:100%;height:auto}
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", zIndex:200 }}>
+      <div style={{ position:"sticky", bottom:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:"8px 0 18px", backdropFilter:"blur(20px)", flexShrink:0 }}>
         {TABS.map(([ico,lbl],i)=>(
           <button key={i} onClick={()=>changeTab(i)} style={{ flex:1, background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
             <span style={{ fontSize:24, filter:tab===i?"none":"grayscale(50%)", transition:"filter 0.2s" }}>{ico}</span>
