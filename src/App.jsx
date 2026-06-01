@@ -2056,7 +2056,7 @@ export default function App() {
   if(!user) return <Splash onDone={handleDone} />;
 
   return (
-    <div style={{ background:T.bg, minHeight:"100vh", color:T.text, fontFamily:"sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", transition:"background 0.3s,color 0.3s" }}>
+    <div style={{ background:T.bg, height:"100vh", color:T.text, fontFamily:"sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s" }}>
       {/* HEADER */}
       <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", position:"sticky", top:0, zIndex:300, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
@@ -2092,7 +2092,7 @@ export default function App() {
       )}
 
       {/* BODY */}
-      <div ref={bodyRef} {...tabSwipe} style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px" }}>
+      <div ref={bodyRef} {...tabSwipe} style={{ flex:1, overflowY:"scroll", overflowX:"hidden", minHeight:0, padding:"16px 14px 100px", WebkitOverflowScrolling:"touch" }}>
         <Countdown T={T} />
         {tab===0 && <MatchesTab T={T} user={user} />}
         {tab===1 && <HistoryTab T={T} />}
