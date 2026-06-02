@@ -1,0 +1,13 @@
+{
+  "name": "Lions Arena 2026",
+  "short_name": "Lions Arena",
+  "description": "La plateforme football du Sénégal · CDM 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05050A",
+  "theme_color": "#F5C518",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
