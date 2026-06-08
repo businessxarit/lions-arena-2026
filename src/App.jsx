@@ -1,69 +1,67 @@
 import { useState, useEffect, useRef } from "react";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
 
-/* ══ FIREBASE CONFIG ══ */
-const firebaseConfig = {
-  apiKey: "AIzaSyAr-iO10IevsIkHHPzy38teoe6V5WQIbf4",
-  authDomain: "lions-arena-2026-c3e2d.firebaseapp.com",
-  projectId: "lions-arena-2026-c3e2d",
-  storageBucket: "lions-arena-2026-c3e2d.firebasestorage.app",
-  messagingSenderId: "384976045865",
-  appId: "1:384976045865:web:ff62f07ed70a138b869938",
-  measurementId: "G-C1XJWWCRKH"
-};
+/* ══ FIREBASE REST API (pas d'import, fonctionne partout) ══ */
+const FB_PROJECT = "lions-arena-2026-c3e2d";
+const FB_API_KEY = "AIzaSyAr-iO10IevsIkHHPzy38teoe6V5WQIbf4";
+const FB_BASE = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents`;
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const auth = getAuth(firebaseApp);
-
-/* Auth anonyme automatique */
-signInAnonymously(auth).catch(()=>{});
-
-/* ══ HELPERS FIRESTORE ══ */
-async function savePronostic(userId, userName, matchId, pick) {
-  try {
-    await addDoc(collection(db, "pronostics"), {
-      userId, userName, matchId, pick,
-      createdAt: serverTimestamp()
-    });
-  } catch(e) { console.error(e); }
+/* ID unique par appareil */
+function getUserId() {
+  let uid = localStorage.getItem("lions_uid");
+  if (!uid) { uid = "u_" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("lions_uid", uid); }
+  return uid;
 }
 
-async function saveComment(userName, flag, text, topic) {
+/* ══ HELPERS FIRESTORE REST ══ */
+async function fbGet(col) {
   try {
-    const ref = await addDoc(collection(db, "comments"), {
-      name: userName, flag, text, topic,
-      likes: 0, likedBy: [],
-      createdAt: serverTimestamp()
+    const res = await fetch(`${FB_BASE}/${col}?key=${FB_API_KEY}`);
+    const d = await res.json();
+    return (d.documents || []).map(doc => {
+      const id = doc.name.split("/").pop();
+      const fields = doc.fields || {};
+      const obj = { id };
+      Object.entries(fields).forEach(([k,v]) => {
+        obj[k] = v.stringValue ?? v.integerValue ?? v.booleanValue ?? v.timestampValue ?? v.arrayValue?.values?.map(x=>x.stringValue) ?? null;
+      });
+      return obj;
     });
-    return ref.id;
-  } catch(e) { console.error(e); return null; }
+  } catch { return []; }
 }
 
-async function likeComment(commentId, userId) {
+async function fbAdd(col, data) {
   try {
-    const ref = doc(db, "comments", commentId);
-    const snap = await getDocs(query(collection(db, "comments")));
-    snap.forEach(d => {
-      if (d.id === commentId) {
-        const data = d.data();
-        if (!data.likedBy?.includes(userId)) {
-          updateDoc(ref, { likes: (data.likes||0)+1, likedBy: [...(data.likedBy||[]), userId] });
-        }
-      }
+    const fields = {};
+    Object.entries(data).forEach(([k,v]) => {
+      if (typeof v === "number") fields[k] = { integerValue: v };
+      else if (typeof v === "boolean") fields[k] = { booleanValue: v };
+      else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(x => ({ stringValue: String(x) })) } };
+      else fields[k] = { stringValue: String(v ?? "") };
     });
-  } catch(e) { console.error(e); }
+    fields.createdAt = { timestampValue: new Date().toISOString() };
+    const res = await fetch(`${FB_BASE}/${col}?key=${FB_API_KEY}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
+    });
+    const d = await res.json();
+    return d.name?.split("/").pop() || null;
+  } catch { return null; }
 }
 
-async function savePronosticUser(userId, userName, matchId, pick, pts) {
+async function fbUpdate(col, docId, data) {
   try {
-    await addDoc(collection(db, "pronostics"), {
-      userId, userName, matchId, pick, pts,
-      createdAt: serverTimestamp()
+    const fields = {};
+    Object.entries(data).forEach(([k,v]) => {
+      if (typeof v === "number") fields[k] = { integerValue: v };
+      else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(x => ({ stringValue: String(x) })) } };
+      else fields[k] = { stringValue: String(v ?? "") };
     });
-  } catch(e) { console.error(e); }
+    const updateMask = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join("&");
+    await fetch(`${FB_BASE}/${col}/${docId}?${updateMask}&key=${FB_API_KEY}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
+    });
+  } catch {}
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -996,7 +994,15 @@ const CDM_FORMAT_2026 = {
 /* ══ MATCHES TAB ══ */
 function MatchesTab({ T, user }) {
   const [view, setView] = useState("groupes");
-  const [selGroup, setSelGroup] = useState("D");
+
+  // Trouver le groupe de l'équipe favorite automatiquement
+  const defaultGroup = (() => {
+    if (!user?.team) return "D";
+    const found = ALL_GROUPS.find(g => g.teams.some(t => t.includes(user.team.split(" ").slice(1).join(" "))));
+    return found?.group || "D";
+  })();
+
+  const [selGroup, setSelGroup] = useState(defaultGroup);
   const group = ALL_GROUPS.find(g => g.group === selGroup);
 
   return (
@@ -1753,29 +1759,24 @@ function PronosticsTab({ T, user }) {
   const [view, setView] = useState("play");
   const [leaderboard, setLeaderboard] = useState([]);
   const [saving, setSaving] = useState({});
-  const userId = auth.currentUser?.uid || "anon";
+  const userId = getUserId();
 
-  useEffect(() => {
-    const q = query(collection(db, "pronostics"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const myPicks = {};
-      const scores = {};
-      snap.docs.forEach(d => {
-        const data = d.data();
-        if (data.userId === userId) myPicks[data.matchId] = data.pick;
-        if (!scores[data.userId]) scores[data.userId] = { name: data.userName, pts: 0, flag:"🇸🇳", uid: data.userId };
-        const m = PRONOSTICS_MATCHES.find(m => m.id === data.matchId);
-        if (m?.locked && m.result === data.pick) scores[data.userId].pts += m.pts;
-      });
-      setSubmitted(myPicks);
-      const board = Object.values(scores)
-        .sort((a,b) => b.pts - a.pts)
-        .slice(0, 10)
-        .map((p, i) => ({ ...p, rank: i+1, trend: i < 3 ? "↑" : "→" }));
-      setLeaderboard(board);
+  const loadPronostics = async () => {
+    const data = await fbGet("pronostics");
+    const myPicks = {};
+    const scores = {};
+    data.forEach(d => {
+      if (d.userId === userId) myPicks[d.matchId] = d.pick;
+      if (!scores[d.userId]) scores[d.userId] = { name: d.userName||"Lion", pts:0, flag:"🇸🇳", uid:d.userId };
+      const m = PRONOSTICS_MATCHES.find(m => m.id === d.matchId);
+      if (m?.locked && m.result === d.pick) scores[d.userId].pts += m.pts;
     });
-    return () => unsub();
-  }, [userId]);
+    setSubmitted(myPicks);
+    const board = Object.values(scores).sort((a,b)=>b.pts-a.pts).slice(0,10).map((p,i)=>({...p,rank:i+1,trend:i<3?"↑":"→"}));
+    setLeaderboard(board);
+  };
+
+  useEffect(() => { loadPronostics(); }, []);
 
   const totalPts = Object.entries(submitted).reduce((acc,[id,pick]) => {
     const m = PRONOSTICS_MATCHES.find(m => m.id === id);
@@ -1785,13 +1786,13 @@ function PronosticsTab({ T, user }) {
 
   const submit = async (id) => {
     if (!picks[id]) return;
-    setSaving(p => ({...p, [id]: true}));
-    setSubmitted(p => ({...p, [id]: picks[id]}));
-    await savePronosticUser(userId, user?.name || "Lion Anonyme", id, picks[id], 0);
-    setSaving(p => ({...p, [id]: false}));
+    setSaving(p=>({...p,[id]:true}));
+    setSubmitted(p=>({...p,[id]:picks[id]}));
+    await fbAdd("pronostics", { userId, userName: user?.name||"Lion Anonyme", matchId: id, pick: picks[id], pts: 0 });
+    setSaving(p=>({...p,[id]:false}));
   };
 
-  const myRank = leaderboard.findIndex(p => p.uid === userId) + 1;
+  const myRank = leaderboard.findIndex(p=>p.uid===userId)+1;
 
   return (
     <div style={{ animation:"fadeIn 0.3s ease" }}>
@@ -1821,7 +1822,7 @@ function PronosticsTab({ T, user }) {
           <div style={{ fontSize:10, color:T.muted, letterSpacing:2, fontWeight:700, marginBottom:12 }}>PRONOSTIQUE ET GAGNE DES POINTS</div>
           {PRONOSTICS_MATCHES.map(m => {
             const isSubmitted = !!submitted[m.id];
-            const isCorrect = m.locked && submitted[m.id] === m.result;
+            const isCorrect = m.locked && submitted[m.id]===m.result;
             const isSaving = saving[m.id];
             return (
               <div key={m.id} style={{ background:isCorrect?A.green+"0C":T.card, border:`1px solid ${isCorrect?A.green+"44":T.border}`, borderRadius:14, padding:16, marginBottom:12 }}>
@@ -1836,7 +1837,7 @@ function PronosticsTab({ T, user }) {
                 </div>
                 {m.locked ? (
                   <div style={{ textAlign:"center", padding:"8px", background:isCorrect?A.green+"18":T.card2, borderRadius:10, fontSize:12, fontWeight:700, color:isCorrect?A.green:T.muted }}>
-                    {isCorrect ? "✅ Bonne prédiction ! +" + m.pts + " pts" : "Match terminé"}
+                    {isCorrect?"✅ Bonne prédiction ! +"+m.pts+" pts":"Match terminé"}
                   </div>
                 ) : isSubmitted ? (
                   <div style={{ textAlign:"center", padding:"8px", background:A.blue+"14", borderRadius:10, fontSize:12, fontWeight:700, color:A.blue }}>
@@ -1853,7 +1854,7 @@ function PronosticsTab({ T, user }) {
                 )}
                 {!isSubmitted && !m.locked && picks[m.id] && (
                   <button onClick={()=>submit(m.id)} disabled={isSaving} style={{ width:"100%", marginTop:10, padding:"10px", background:isSaving?"#1A1A2E":`linear-gradient(135deg,${A.green},${A.gold})`, border:"none", borderRadius:10, color:isSaving?T.muted:"#000", fontWeight:800, fontSize:13, cursor:isSaving?"not-allowed":"pointer" }}>
-                    {isSaving ? "⏳ Sauvegarde..." : "✓ Confirmer ma prédiction"}
+                    {isSaving?"⏳ Sauvegarde...":"✓ Confirmer ma prédiction"}
                   </button>
                 )}
               </div>
@@ -1865,16 +1866,14 @@ function PronosticsTab({ T, user }) {
       {view==="board" && (
         <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:18 }}>
           <div style={{ fontSize:10, color:A.gold, fontWeight:800, letterSpacing:2, marginBottom:14 }}>🏆 CLASSEMENT RÉEL · FIREBASE</div>
-          {leaderboard.length === 0 && (
-            <div style={{ textAlign:"center", padding:"20px 0", color:T.muted, fontSize:13 }}>Sois le premier à pronostiquer ! 🦁</div>
-          )}
+          {leaderboard.length===0 && <div style={{ textAlign:"center", padding:"20px 0", color:T.muted, fontSize:13 }}>Sois le premier à pronostiquer ! 🦁</div>}
           {leaderboard.map((p,i)=>(
             <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", background:p.uid===userId?A.gold+"0C":i===0?A.gold+"0A":"transparent", borderRadius:10, border:`1px solid ${p.uid===userId?A.gold+"44":"transparent"}`, marginBottom:6 }}>
               <span style={{ fontSize:14, fontWeight:900, fontFamily:"monospace", color:i<3?A.gold:T.muted, width:24, textAlign:"center" }}>#{p.rank}</span>
               <span style={{ fontSize:16 }}>{p.flag}</span>
               <span style={{ flex:1, fontSize:14, fontWeight:600, color:p.uid===userId?A.gold:T.text }}>{p.name}{p.uid===userId?" (toi)":""}</span>
               <span style={{ fontSize:12, color:p.trend==="↑"?A.green:T.muted }}>{p.trend}</span>
-              <span style={{ fontFamily:"monospace", fontWeight:900, color:A.gold, fontSize:14 }}>{p.pts.toLocaleString()}</span>
+              <span style={{ fontFamily:"monospace", fontWeight:900, color:A.gold, fontSize:14 }}>{p.pts}</span>
             </div>
           ))}
         </div>
@@ -1987,89 +1986,90 @@ function CommunityTab({ T, user }) {
   const [filter, setFilter] = useState("tous");
   const [liked, setLiked] = useState({});
   const [posting, setPosting] = useState(false);
-  const userId = auth.currentUser?.uid || "anon";
+  const userId = getUserId();
 
-  /* Écoute temps réel Firestore */
+  const topics = [
+    { id:"senegal", label:"🦁 Lions",    color:A.green },
+    { id:"groupeD", label:"⚔️ Groupe D", color:A.gold },
+    { id:"ia",      label:"🤖 IA",       color:A.blue },
+    { id:"general", label:"🌍 Général",  color:"#8888AA" },
+  ];
+
+  const loadComments = async () => {
+    const data = await fbGet("comments");
+    data.sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+    setComments(data);
+    const myLikes = {};
+    data.forEach(c => { if ((c.likedBy||[]).includes(userId)) myLikes[c.id] = true; });
+    setLiked(myLikes);
+  };
+
   useEffect(() => {
-    const q = query(collection(db, "comments"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        time: d.data().createdAt?.toDate
-          ? timeAgo(d.data().createdAt.toDate())
-          : "À l'instant"
-      }));
-      setComments(data);
-      /* Marquer les likes de l'utilisateur */
-      const myLikes = {};
-      data.forEach(c => { if (c.likedBy?.includes(userId)) myLikes[c.id] = true; });
-      setLiked(myLikes);
-    });
-    return () => unsub();
+    loadComments();
+    const interval = setInterval(loadComments, 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  const timeAgo = (date) => {
-    const diff = Math.floor((new Date() - date) / 1000);
+  const timeAgo = (iso) => {
+    if (!iso) return "À l'instant";
+    const diff = Math.floor((new Date() - new Date(iso)) / 1000);
     if (diff < 60) return "À l'instant";
     if (diff < 3600) return `Il y a ${Math.floor(diff/60)}min`;
     if (diff < 86400) return `Il y a ${Math.floor(diff/3600)}h`;
     return `Il y a ${Math.floor(diff/86400)}j`;
   };
 
-  const topics = [
-    { id:"senegal", label:"🦁 Lions",    color:A.green },
-    { id:"groupeD", label:"⚔️ Groupe D", color:A.gold },
-    { id:"ia",      label:"🤖 IA",       color:A.blue },
-    { id:"general", label:"🌍 Général",  color:T.muted },
-  ];
-
   const handleLike = async (c) => {
     if (liked[c.id]) return;
+    const newLikedBy = [...(c.likedBy||[]), userId];
+    const newLikes = (parseInt(c.likes)||0) + 1;
     setLiked(p=>({...p,[c.id]:true}));
-    try {
-      await updateDoc(doc(db, "comments", c.id), {
-        likes: (c.likes||0)+1,
-        likedBy: [...(c.likedBy||[]), userId]
-      });
-    } catch(e) {}
+    setComments(prev=>prev.map(x=>x.id===c.id?{...x,likes:newLikes,likedBy:newLikedBy}:x));
+    await fbUpdate("comments", c.id, { likes: newLikes, likedBy: newLikedBy });
   };
 
   const handleSubmit = async () => {
     if (!newComment.trim() || posting) return;
     setPosting(true);
-    await saveComment(user?.name || "Lion Anonyme", "🇸🇳", newComment.trim(), topic);
+    const id = await fbAdd("comments", {
+      name: user?.name || "Lion Anonyme",
+      flag: "🇸🇳",
+      text: newComment.trim(),
+      topic,
+      likes: 0,
+      likedBy: [],
+      userId,
+    });
     setNewComment("");
+    await loadComments();
     setPosting(false);
   };
 
   const filtered = filter==="tous" ? comments : comments.filter(c=>c.topic===filter);
-  const topicColor = (t) => topics.find(x=>x.id===t)?.color || T.muted;
+  const topicColor = (t) => topics.find(x=>x.id===t)?.color || "#8888AA";
   const topicLabel = (t) => topics.find(x=>x.id===t)?.label || t;
 
   return (
     <div style={{ animation:"fadeIn 0.3s ease" }}>
-      {/* HEADER */}
       <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:16, padding:"14px 16px", marginBottom:16 }}>
         <div style={{ fontSize:13, fontWeight:800, color:A.green, marginBottom:4 }}>💬 FORUM LIONS ARENA</div>
-        <div style={{ fontSize:11, color:T.muted }}>Donne ton avis · Sauvegardé en temps réel 🔥</div>
+        <div style={{ fontSize:11, color:T.muted }}>Donne ton avis · Temps réel · Visible par tous 🔥</div>
         <div style={{ marginTop:10, display:"flex", gap:8 }}>
           <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
             <div style={{ fontSize:18, fontWeight:900, color:A.gold }}>{comments.length}</div>
             <div style={{ fontSize:10, color:T.muted }}>Avis</div>
           </div>
           <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
-            <div style={{ fontSize:18, fontWeight:900, color:A.green }}>{comments.reduce((a,c)=>a+(c.likes||0),0)}</div>
+            <div style={{ fontSize:18, fontWeight:900, color:A.green }}>{comments.reduce((a,c)=>a+(parseInt(c.likes)||0),0)}</div>
             <div style={{ fontSize:10, color:T.muted }}>Likes</div>
           </div>
           <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
-            <div style={{ fontSize:18, fontWeight:900, color:A.purple }}>🌍</div>
-            <div style={{ fontSize:10, color:T.muted }}>Live</div>
+            <div style={{ fontSize:14, fontWeight:900, color:A.purple }}>🔄 Live</div>
+            <div style={{ fontSize:10, color:T.muted }}>10s</div>
           </div>
         </div>
       </div>
 
-      {/* FORMULAIRE */}
       <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:16 }}>
         <div style={{ fontSize:11, fontWeight:800, color:T.text, marginBottom:10 }}>✍️ Ton avis, {user?.name || "Lion"} !</div>
         <div style={{ display:"flex", gap:6, marginBottom:10, flexWrap:"wrap" }}>
@@ -2077,29 +2077,20 @@ function CommunityTab({ T, user }) {
             <button key={tp.id} onClick={()=>setTopic(tp.id)} style={{ padding:"4px 10px", borderRadius:20, border:`1px solid ${topic===tp.id?tp.color:T.border}`, background:topic===tp.id?tp.color+"18":"transparent", color:topic===tp.id?tp.color:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{tp.label}</button>
           ))}
         </div>
-        <textarea
-          value={newComment}
-          onChange={e=>setNewComment(e.target.value)}
-          placeholder="Que penses-tu du match Sénégal vs France ?"
-          rows={3}
-          style={{ width:"100%", background:T.input, border:`1px solid ${newComment.trim()?A.green+"55":T.inputBorder}`, borderRadius:12, padding:"10px 14px", fontSize:13, color:T.text, outline:"none", resize:"none", fontFamily:"inherit", lineHeight:1.6 }}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!newComment.trim()||posting}
+        <textarea value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Que penses-tu du match Sénégal vs France ?" rows={3}
+          style={{ width:"100%", background:T.input, border:`1px solid ${newComment.trim()?A.green+"55":T.inputBorder}`, borderRadius:12, padding:"10px 14px", fontSize:13, color:T.text, outline:"none", resize:"none", fontFamily:"inherit", lineHeight:1.6 }} />
+        <button onClick={handleSubmit} disabled={!newComment.trim()||posting}
           style={{ width:"100%", marginTop:10, padding:"11px", background:newComment.trim()&&!posting?`linear-gradient(135deg,${A.green},${A.gold})`:"#1A1A2E", border:"none", borderRadius:12, color:newComment.trim()&&!posting?"#000":T.muted, fontWeight:800, fontSize:13, cursor:newComment.trim()&&!posting?"pointer":"not-allowed" }}>
           {posting ? "⏳ Publication..." : "🦁 Publier mon avis"}
         </button>
       </div>
 
-      {/* FILTRES */}
       <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
         {[["tous","🌍 Tous"],["senegal","🦁 Lions"],["groupeD","⚔️ Groupe D"],["ia","🤖 IA"],["general","🌍 Général"]].map(([v,l])=>(
           <button key={v} onClick={()=>setFilter(v)} style={{ flexShrink:0, padding:"6px 12px", borderRadius:20, border:`1px solid ${filter===v?A.gold:T.border}`, background:filter===v?A.gold+"14":"transparent", color:filter===v?A.gold:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{l}</button>
         ))}
       </div>
 
-      {/* COMMENTAIRES */}
       <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
         {filtered.map((c,i)=>(
           <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16 }}>
@@ -2108,7 +2099,7 @@ function CommunityTab({ T, user }) {
                 <div style={{ width:32, height:32, borderRadius:"50%", background:A.green+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{c.flag||"🇸🇳"}</div>
                 <div>
                   <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
-                  <div style={{ fontSize:10, color:T.muted }}>{c.time}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{timeAgo(c.createdAt)}</div>
                 </div>
               </div>
               <div style={{ padding:"3px 8px", borderRadius:20, background:topicColor(c.topic)+"18", border:`1px solid ${topicColor(c.topic)}33` }}>
@@ -2119,7 +2110,7 @@ function CommunityTab({ T, user }) {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <button onClick={()=>handleLike(c)} style={{ display:"flex", alignItems:"center", gap:6, background:liked[c.id]?A.gold+"14":"transparent", border:`1px solid ${liked[c.id]?A.gold+"44":T.border}`, borderRadius:20, padding:"5px 12px", cursor:liked[c.id]?"default":"pointer" }}>
                 <span style={{ fontSize:14 }}>{liked[c.id]?"❤️":"🤍"}</span>
-                <span style={{ fontSize:12, fontWeight:700, color:liked[c.id]?A.gold:T.muted }}>{c.likes||0}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:liked[c.id]?A.gold:T.muted }}>{parseInt(c.likes)||0}</span>
               </button>
               <span style={{ fontSize:10, color:T.muted }}>#{i+1}</span>
             </div>
@@ -2136,7 +2127,6 @@ function CommunityTab({ T, user }) {
     </div>
   );
 }
-
 /* ══ AI TAB ══ */
 function AITab({ T, user }) {
   const [mode, setMode] = useState("predict");
@@ -2432,7 +2422,9 @@ Base-toi sur: forme récente, historique h2h, valeur des effectifs, style de jeu
 const TABS=[["🏟️","Matchs"],["📖","Histoire"],["🏅","Légendes"],["🎯","Pronos"],["🤖","IA"],["💬","Forum"]];
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try { const s = localStorage.getItem("lions_user"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [isDark, setIsDark] = useState(true);
   const [tab, setTab] = useState(0);
   const [installable, setInstallable] = useState(false);
@@ -2492,7 +2484,10 @@ export default function App() {
     () => { if (tab < TABS.length - 1) changeTab(tab + 1); }
   );
 
-  const handleDone = (u) => setUser(u);
+  const handleDone = (u) => {
+    setUser(u);
+    localStorage.setItem("lions_user", JSON.stringify(u));
+  };
   const changeTab = i => { setTab(i); if(bodyRef.current) bodyRef.current.scrollTop=0; };
 
   if(!user) return <Splash onDone={handleDone} />;
@@ -2545,7 +2540,7 @@ export default function App() {
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{ position:"sticky", bottom:0, left:0, right:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:`8px 0 calc(12px + env(safe-area-inset-bottom, 8px))`, backdropFilter:"blur(20px)", flexShrink:0, zIndex:200, width:"100%" }}>
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:`8px 0 calc(12px + env(safe-area-inset-bottom, 8px))`, backdropFilter:"blur(20px)", zIndex:500, maxWidth:480, margin:"0 auto" }}>
         {TABS.map(([ico,lbl],i)=>(
           <button key={i} onClick={()=>changeTab(i)} style={{ flex:1, background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
             <span style={{ fontSize:24, filter:tab===i?"none":"grayscale(50%)", transition:"filter 0.2s" }}>{ico}</span>
