@@ -1,13 +1,15 @@
 {
   "name": "Lions Arena 2026",
   "short_name": "Lions Arena",
-  "description": "La plateforme football du Sénégal · CDM 2026",
+  "description": "L'app officielle des supporters du Sénégal - CDM 2026",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#05050A",
-  "theme_color": "#F5C518",
   "orientation": "portrait",
+  "background_color": "#05050A",
+  "theme_color": "#05050A",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
   ]
 }
