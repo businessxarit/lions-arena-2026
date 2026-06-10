@@ -624,7 +624,7 @@ function Splash({ onDone }) {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#05050A", display:"flex", flexDirection:"column", animation:animOut?"fadeOut 0.5s ease forwards":"none", overflow:"hidden" }}>
+    <div style={{ minHeight:"100dvh", background:"#05050A", display:"flex", flexDirection:"column", animation:animOut?"fadeOut 0.5s ease forwards":"none", overflow:"hidden" }}>
       <div style={{ position:"fixed", top:"30%", left:"50%", transform:"translateX(-50%)", width:300, height:300, borderRadius:"50%", background:"radial-gradient(circle,#F5C51810,transparent 70%)", pointerEvents:"none", zIndex:0 }} />
 
       {step === 0 && (
@@ -669,7 +669,7 @@ function Splash({ onDone }) {
       )}
 
       {step === 2 && (
-        <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:"100vh" }}>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:"100dvh" }}>
           <div style={{ padding:"20px 20px 12px", background:"#05050A", position:"sticky", top:0, zIndex:10, borderBottom:"1px solid #1A1A2E" }}>
             <div style={{ textAlign:"center" }}>
               <div style={{ fontSize:28, marginBottom:6 }}>🌍</div>
@@ -2419,7 +2419,63 @@ Base-toi sur: forme récente, historique h2h, valeur des effectifs, style de jeu
 }
 
 /* ══ MAIN APP ══ */
-const TABS=[["🏟️","Matchs"],["📖","Histoire"],["🏅","Légendes"],["🎯","Pronos"],["🤖","IA"],["💬","Forum"]];
+/* ══ SVG ICONS NAV ══ */
+const NAV_ICONS = {
+  matchs: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={active?2.2:1.8}/>
+      <path d="M12 2 C8 6 8 18 12 22" stroke={color} strokeWidth={active?2:1.6}/>
+      <path d="M12 2 C16 6 16 18 12 22" stroke={color} strokeWidth={active?2:1.6}/>
+      <path d="M2 12 L22 12" stroke={color} strokeWidth={active?2:1.6}/>
+      <path d="M3.5 7 L20.5 7" stroke={color} strokeWidth={active?1.8:1.4}/>
+      <path d="M3.5 17 L20.5 17" stroke={color} strokeWidth={active?1.8:1.4}/>
+    </svg>
+  ),
+  histoire: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2 L15 9 L22 9 L16.5 14 L18.5 21 L12 17 L5.5 21 L7.5 14 L2 9 L9 9 Z" stroke={color} strokeWidth={active?2:1.7} strokeLinejoin="round" fill={active?color+"33":"none"}/>
+    </svg>
+  ),
+  legendes: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M6 4 L6 14 C6 18 18 18 18 14 L18 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
+      <path d="M4 4 L20 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
+      <path d="M9 20 L15 20" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
+      <path d="M12 18 L12 20" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
+    </svg>
+  ),
+  pronos: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={active?2.2:1.8}/>
+      <circle cx="12" cy="12" r="4" stroke={color} strokeWidth={active?2:1.6}/>
+      <circle cx="12" cy="12" r="1.5" fill={color}/>
+      <line x1="12" y1="3" x2="12" y2="6" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
+      <line x1="12" y1="18" x2="12" y2="21" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
+      <line x1="3" y1="12" x2="6" y2="12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
+      <line x1="18" y1="12" x2="21" y2="12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
+    </svg>
+  ),
+  ia: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="6" width="18" height="13" rx="3" stroke={color} strokeWidth={active?2.2:1.8}/>
+      <circle cx="8" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/>
+      <circle cx="16" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/>
+      <path d="M10 12 L14 12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
+      <path d="M8 6 L8 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
+      <path d="M16 6 L16 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
+      <path d="M12 6 L12 4" stroke={color} strokeWidth={active?1.8:1.6} strokeLinecap="round"/>
+    </svg>
+  ),
+  forum: (active, color) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M21 15 C21 16.1 20.1 17 19 17 L7 17 L3 21 L3 5 C3 3.9 3.9 3 5 3 L19 3 C20.1 3 21 3.9 21 5 Z" stroke={color} strokeWidth={active?2.2:1.8} strokeLinejoin="round" fill={active?color+"18":"none"}/>
+      <line x1="7" y1="8" x2="17" y2="8" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/>
+      <line x1="7" y1="12" x2="14" y2="12" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/>
+    </svg>
+  ),
+};
+
+const TABS=[["matchs","Matchs"],["histoire","Histoire"],["legendes","Légendes"],["pronos","Pronos"],["ia","IA"],["forum","Forum"]];
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -2430,6 +2486,8 @@ export default function App() {
   const [installable, setInstallable] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [notifGranted, setNotifGranted] = useState(false);
+  const [navShrunk, setNavShrunk] = useState(false);
+  const lastScrollY = useRef(0);
   const bodyRef = useRef(null);
 
   useEffect(() => {
@@ -2488,12 +2546,25 @@ export default function App() {
     setUser(u);
     localStorage.setItem("lions_user", JSON.stringify(u));
   };
-  const changeTab = i => { setTab(i); if(bodyRef.current) bodyRef.current.scrollTop=0; };
+  const changeTab = i => { setTab(i); if(bodyRef.current) bodyRef.current.scrollTop=0; setNavShrunk(false); };
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const curr = el.scrollTop;
+      if (curr > lastScrollY.current + 8) setNavShrunk(true);
+      else if (curr < lastScrollY.current - 8) setNavShrunk(false);
+      lastScrollY.current = curr;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if(!user) return <Splash onDone={handleDone} />;
 
   return (
-    <div style={{ background:T.bg, height:"100vh", color:T.text, fontFamily:"sans-serif", maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s" }}>
+    <div style={{ background:T.bg, height:"100dvh", color:T.text, fontFamily:"sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s", position:"fixed", top:0, left:0, right:0, bottom:0 }}>
       {/* HEADER */}
       <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", position:"sticky", top:0, zIndex:300, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
@@ -2539,15 +2610,52 @@ export default function App() {
         {tab===5 && <CommunityTab T={T} user={user} />}
       </div>
 
-      {/* BOTTOM NAV */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:T.header, borderTop:`1px solid ${T.border}`, display:"flex", padding:`8px 0 calc(12px + env(safe-area-inset-bottom, 8px))`, backdropFilter:"blur(20px)", zIndex:500, maxWidth:480, margin:"0 auto" }}>
-        {TABS.map(([ico,lbl],i)=>(
-          <button key={i} onClick={()=>changeTab(i)} style={{ flex:1, background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-            <span style={{ fontSize:24, filter:tab===i?"none":"grayscale(50%)", transition:"filter 0.2s" }}>{ico}</span>
-            <span style={{ fontSize:10, color:tab===i?A.gold:T.muted, fontWeight:900, letterSpacing:0.5 }}>{lbl.toUpperCase()}</span>
-            {tab===i&&<div style={{ width:14, height:2, borderRadius:1, background:A.gold }} />}
-          </button>
-        ))}
+      {/* BOTTOM NAV — rétrécit comme Instagram au scroll */}
+      <div style={{
+        position:"fixed", bottom:0, left:0, right:0, zIndex:500,
+        display:"flex", justifyContent:"center",
+        padding:`0 0 calc(env(safe-area-inset-bottom, 10px) + 6px)`,
+        background:"transparent", pointerEvents:"none",
+        transition:"all 0.3s ease",
+      }}>
+        <div style={{
+          display:"flex", alignItems:"center",
+          background: navShrunk ? T.header+"EE" : T.header,
+          backdropFilter:"blur(24px)",
+          borderTop: navShrunk ? "none" : `1px solid ${T.border}`,
+          borderRadius: navShrunk ? 40 : 0,
+          padding: navShrunk ? "6px 10px" : `8px 0`,
+          gap: navShrunk ? 4 : 0,
+          width: navShrunk ? "auto" : "100%",
+          boxShadow: navShrunk ? "0 4px 30px rgba(0,0,0,0.5)" : "none",
+          transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)",
+          pointerEvents:"all",
+        }}>
+          {TABS.map(([key,lbl],i)=>{
+            const isActive = tab===i;
+            const iconColor = isActive ? A.gold : T.muted;
+            return (
+              <button key={i} onClick={()=>changeTab(i)} style={{
+                flex: navShrunk ? "none" : 1,
+                background: navShrunk && isActive ? A.gold+"22" : "transparent",
+                border:"none", cursor:"pointer",
+                display:"flex", flexDirection:"column", alignItems:"center",
+                gap: navShrunk ? 0 : 3,
+                padding: navShrunk ? "8px 14px" : "6px 0 2px",
+                borderRadius: navShrunk ? 30 : 0,
+                transition:"all 0.3s ease",
+                minWidth: navShrunk ? 44 : "auto",
+              }}>
+                <div style={{ opacity: isActive ? 1 : 0.55, transition:"opacity 0.2s, transform 0.2s", transform: isActive ? "scale(1.08)" : "scale(1)" }}>
+                  {NAV_ICONS[key]?.(isActive, iconColor)}
+                </div>
+                {!navShrunk && <span style={{ fontSize:9, color:iconColor, fontWeight:900, letterSpacing:0.8, transition:"color 0.2s" }}>{lbl.toUpperCase()}</span>}
+                {!navShrunk && isActive && <div style={{ width:16, height:2, borderRadius:1, background:A.gold, marginTop:1 }} />}
+                {navShrunk && isActive && <div style={{ width:4, height:4, borderRadius:"50%", background:A.gold, marginTop:2 }} />}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
