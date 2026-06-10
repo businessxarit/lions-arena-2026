@@ -2564,7 +2564,7 @@ export default function App() {
   if(!user) return <Splash onDone={handleDone} />;
 
   return (
-    <div style={{ background:T.bg, height:"100dvh", color:T.text, fontFamily:"sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s", position:"fixed", top:0, left:0, right:0, bottom:0 }}>
+    <div style={{ background:T.bg, height:"100%", minHeight:"100dvh", color:T.text, fontFamily:"sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s", position:"fixed", top:0, left:0, right:0, bottom:0, paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)" }}>
       {/* HEADER */}
       <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", position:"sticky", top:0, zIndex:300, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
