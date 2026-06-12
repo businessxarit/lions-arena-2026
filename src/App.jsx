@@ -492,30 +492,47 @@ async function fetchLiveScores() {
   } catch { return null; }
 }
 
-async function fetchRealTimeMatches() {
-  if (!DATA_CONFIG.FOOTBALL_DATA_KEY) return null;
+/* ══ API CDM 2026 GRATUITE ══ */
+const WC_API = "https://api.football-data.org/v4/competitions/WC";
+const WC_KEY = "1c977bce952c48e18140ca4307bf2899";
+
+async function fetchWCMatches(status) {
   try {
-    const [liveRes, upcomingRes] = await Promise.all([
-      fetch("https://api.football-data.org/v4/competitions/WC/matches?status=LIVE", { headers: { "X-Auth-Token": DATA_CONFIG.FOOTBALL_DATA_KEY } }),
-      fetch("https://api.football-data.org/v4/competitions/WC/matches?status=IN_PLAY,PAUSED", { headers: { "X-Auth-Token": DATA_CONFIG.FOOTBALL_DATA_KEY } })
-    ]);
-    const live = liveRes.ok ? await liveRes.json() : { matches: [] };
-    const inplay = upcomingRes.ok ? await upcomingRes.json() : { matches: [] };
-    return [...(live.matches || []), ...(inplay.matches || [])];
+    const res = await fetch(`${WC_API}/matches?status=${status}`, {
+      headers: { "X-Auth-Token": WC_KEY }
+    });
+    if (!res.ok) return [];
+    const d = await res.json();
+    return d.matches || [];
+  } catch { return []; }
+}
+
+async function fetchWCStandings() {
+  try {
+    const res = await fetch(`${WC_API}/standings`, {
+      headers: { "X-Auth-Token": WC_KEY }
+    });
+    if (!res.ok) return null;
+    return await res.json();
   } catch { return null; }
 }
 
+async function fetchRealTimeMatches() {
+  const [live, inplay] = await Promise.all([
+    fetchWCMatches("LIVE"),
+    fetchWCMatches("IN_PLAY,PAUSED")
+  ]);
+  return [...live, ...inplay];
+}
+
 async function fetchUpcomingMatches() {
-  if (!DATA_CONFIG.FOOTBALL_DATA_KEY) return null;
-  try {
-    const res = await fetch(
-      "https://api.football-data.org/v4/competitions/WC/matches?status=SCHEDULED",
-      { headers: { "X-Auth-Token": DATA_CONFIG.FOOTBALL_DATA_KEY } }
-    );
-    if (!res.ok) return null;
-    const d = await res.json();
-    return (d.matches || []).slice(0, 5);
-  } catch { return null; }
+  const matches = await fetchWCMatches("SCHEDULED");
+  return matches.slice(0, 8);
+}
+
+async function fetchFinishedMatches() {
+  const matches = await fetchWCMatches("FINISHED");
+  return matches.slice(-10).reverse();
 }
 
 async function fetchTopScorers(leagueId = DATA_CONFIG.WC_2026_ID, season = 2026) {
@@ -1225,10 +1242,10 @@ function SquadCard({ T, teamName, onClose }) {
 /* ══ MATCHS DU JOUR CDM 2026 ══ */
 const TODAY_MATCHES = [
   // ══ 11 JUIN ══
-  { id:"m01", group:"A", journee:1, t1:"🇲🇽 Mexique", t1code:"MEX", t1flag:"🇲🇽", t2:"🇿🇦 Afr. du Sud", t2code:"RSA", t2flag:"🇿🇦", date:"11 Juin 2026", time:"21h00", venue:"Estadio Azteca", city:"Mexico City", tv:"RTS1 (Sén) · TF1", arbitre:"Wilton Sampaio (BRA)", status:"upcoming", score:null, cotes:{t1:1.52,nul:3.80,t2:5.50}, h2h:[{date:"2010",score:"1-1",comp:"CDM",winner:"draw"},{date:"2002",score:"2-2",comp:"CDM",winner:"draw"}], forme_t1:["G","G","P","G","N"], forme_t2:["P","G","N","G","G"] },
+  { id:"m01", group:"A", journee:1, t1:"🇲🇽 Mexique", t1code:"MEX", t1flag:"🇲🇽", t2:"🇿🇦 Afr. du Sud", t2code:"RSA", t2flag:"🇿🇦", date:"11 Juin 2026", time:"21h00", venue:"Estadio Azteca", city:"Mexico City", tv:"RTS1 (Sén) · TF1", arbitre:"Wilton Sampaio (BRA)", status:"fini", score:"2-0", scoreur_t1:"Jiménez 45, Lira 78", cotes:{t1:1.52,nul:3.80,t2:5.50}, h2h:[{date:"2010",score:"1-1",comp:"CDM",winner:"draw"},{date:"2002",score:"2-2",comp:"CDM",winner:"draw"}], forme_t1:["G","G","P","G","N"], forme_t2:["P","G","N","G","G"] },
 
   // ══ 12 JUIN ══
-  { id:"m02", group:"A", journee:1, t1:"🇰🇷 Corée du Sud", t1code:"KOR", t1flag:"🇰🇷", t2:"🇨🇿 Rép. Tchèque", t2code:"CZE", t2flag:"🇨🇿", date:"12 Juin 2026", time:"04h00", venue:"BMO Field", city:"Toronto", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.10,nul:3.40,t2:3.20}, h2h:[], forme_t1:["G","N","G","P","G"], forme_t2:["G","G","N","G","P"] },
+  { id:"m02", group:"A", journee:1, t1:"🇰🇷 Corée du Sud", t1code:"KOR", t1flag:"🇰🇷", t2:"🇨🇿 Rép. Tchèque", t2code:"CZE", t2flag:"🇨🇿", date:"12 Juin 2026", time:"04h00", venue:"BMO Field", city:"Toronto", tv:"RTS1 (Sén)", arbitre:"TBD", status:"fini", score:"2-1", scoreur_t1:"Hwang 23, Son 67", scoreur_t2:"Schick 55", cotes:{t1:2.10,nul:3.40,t2:3.20}, h2h:[], forme_t1:["G","N","G","P","G"], forme_t2:["G","G","N","G","P"] },
   { id:"m03", group:"B", journee:1, t1:"🇨🇦 Canada", t1code:"CAN", t1flag:"🇨🇦", t2:"🇧🇦 Bosnie", t2code:"BIH", t2flag:"🇧🇦", date:"12 Juin 2026", time:"21h00", venue:"BC Place", city:"Vancouver", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.85,nul:3.50,t2:4.00}, h2h:[], forme_t1:["G","G","G","N","P"], forme_t2:["N","G","P","G","G"] },
 
   // ══ 13 JUIN ══
@@ -1256,136 +1273,363 @@ const TODAY_MATCHES = [
 
 
 
+
+/* ══ DONNÉES H2H & FORME COMPLÈTES ══ */
+const H2H_DATA = {
+  "MEX_RSA": {
+    results: [
+      { date:"11/06/2026", comp:"CDM 2026", score:"2-0", winner:"t1", scorers:"Jiménez 45', Lira 78'" },
+      { date:"10/06/2010", comp:"CDM 2010", score:"1-1", winner:"draw", scorers:"Marquez 79' / Tshabalala 55'" },
+      { date:"22/06/2002", comp:"CDM 2002", score:"2-2", winner:"draw", scorers:"Borgetti 28', Arellano 65' / McCarthy 5', Nkosi 81'" },
+    ],
+    stats: { t1_wins:1, draws:2, t2_wins:0 }
+  },
+  "SEN_FRA": {
+    results: [
+      { date:"31/05/2002", comp:"CDM 2002", score:"1-0", winner:"t1", scorers:"Papa Bouba Diop 30'" },
+      { date:"09/10/2001", comp:"Amical", score:"3-0", winner:"t2", scorers:"Henry 12', Dugarry 34', Cissé 67'" },
+      { date:"17/08/1968", comp:"Amical", score:"2-1", winner:"t2", scorers:"Gondet 45', Loubet 78' / Diouf 61'" },
+    ],
+    stats: { t1_wins:1, draws:0, t2_wins:2 }
+  },
+  "KOR_CZE": {
+    results: [
+      { date:"12/06/2026", comp:"CDM 2026", score:"2-1", winner:"t1", scorers:"Son 23', Hwang 67' / Schick 55'" },
+      { date:"14/06/2002", comp:"CDM 2002", score:"3-2", winner:"t1", scorers:"Lee 2 buts, Ahn / Koller, Lokvenc" },
+    ],
+    stats: { t1_wins:2, draws:0, t2_wins:0 }
+  },
+};
+
+/* ══ COMPOSITIONS PROBABLES CDM 2026 ══ */
+const PROBABLE_SQUADS = {
+  "MEX": {
+    formation: "4-5-1", coach: "Javier Aguirre",
+    titulaires: [
+      { num:1,  name:"R. Rangel",    pos:"GB",  club:"Chivas" },
+      { num:15, name:"I. Reyes",     pos:"DG",  club:"América" },
+      { num:3,  name:"C. Montes",    pos:"DC",  club:"América", captain:true },
+      { num:5,  name:"J. Vásquez",   pos:"DC",  club:"Monterrey" },
+      { num:23, name:"J. Gallardo",  pos:"DD",  club:"Cruz Azul" },
+      { num:25, name:"R. Alvarado",  pos:"MG",  club:"Chivas" },
+      { num:26, name:"B. Gutiérrez", pos:"MC",  club:"Tigres" },
+      { num:6,  name:"E. Lira",      pos:"MC",  club:"Santos" },
+      { num:8,  name:"Á. Fidalgo",   pos:"MC",  club:"América" },
+      { num:16, name:"J. Quiñones",  pos:"MD",  club:"León" },
+      { num:9,  name:"R. Jiménez",   pos:"AT",  club:"Fulham" },
+    ],
+    remplacants: [
+      { num:13, name:"G. Ochoa",     pos:"GB",  club:"Salernitana" },
+      { num:4,  name:"J. Sánchez",   pos:"DC",  club:"Tigres" },
+      { num:7,  name:"H. Lozano",    pos:"AD",  club:"PSV" },
+      { num:14, name:"O. Pineda",    pos:"MC",  club:"Chivas" },
+      { num:11, name:"S. Giménez",   pos:"AT",  club:"Feyenoord" },
+    ]
+  },
+  "RSA": {
+    formation: "5-3-2", coach: "Hugo Broos",
+    titulaires: [
+      { num:1,  name:"R. Williams",  pos:"GB",  club:"Kaizer Chiefs", captain:true },
+      { num:21, name:"I. Okon",      pos:"DD",  club:"Mamelodi" },
+      { num:4,  name:"T. Mokoena",   pos:"DC",  club:"Brest" },
+      { num:13, name:"Y. Sithole",   pos:"DC",  club:"SuperSport" },
+      { num:23, name:"J. Adams",     pos:"DC",  club:"Toulouse" },
+      { num:6,  name:"A. Modiba",    pos:"DG",  club:"Mamelodi" },
+      { num:20, name:"K. Mudau",     pos:"MD",  club:"Anderlecht" },
+      { num:14, name:"M. Mbokazi",   pos:"MC",  club:"AmaZulu" },
+      { num:19, name:"N. Sibisi",    pos:"MG",  club:"Orlando" },
+      { num:15, name:"I. Rayners",   pos:"AT",  club:"Cercle Bruges" },
+      { num:9,  name:"L. Foster",    pos:"AT",  club:"Mamelodi" },
+    ],
+    remplacants: [
+      { num:16, name:"S. Chaine",    pos:"GB",  club:"Wydad" },
+      { num:5,  name:"S. Ndlovu",    pos:"DC",  club:"SuperSport" },
+      { num:10, name:"P. Mkhulise",  pos:"MC",  club:"Mamelodi" },
+      { num:18, name:"E. Makgopa",   pos:"AT",  club:"Brest" },
+    ]
+  },
+  "SEN": {
+    formation: "4-3-3", coach: "Aliou Cissé",
+    titulaires: [
+      { num:16, name:"E. Mendy",     pos:"GB",  club:"Al-Ahli" },
+      { num:2,  name:"M. Sabaly",    pos:"DD",  club:"Real Betis" },
+      { num:3,  name:"K. Koulibaly", pos:"DC",  club:"Al-Hilal", captain:true },
+      { num:4,  name:"A. Diallo",    pos:"DC",  club:"PSG" },
+      { num:23, name:"N. Mendy",     pos:"DG",  club:"Chelsea" },
+      { num:8,  name:"I. Gueye",     pos:"MDC", club:"Everton" },
+      { num:6,  name:"C. Kouyaté",   pos:"MC",  club:"Nottingham" },
+      { num:14, name:"P. Gueye",     pos:"MC",  club:"Juventus" },
+      { num:11, name:"I. Sarr",      pos:"AG",  club:"Crystal Palace" },
+      { num:9,  name:"B. Dia",       pos:"AT",  club:"Lazio" },
+      { num:10, name:"S. Mané",      pos:"AD",  club:"Al-Nassr" },
+    ],
+    remplacants: [
+      { num:1,  name:"S. Gomis",     pos:"GB",  club:"Al-Hilal" },
+      { num:5,  name:"P. Badji",     pos:"DC",  club:"Metz" },
+      { num:7,  name:"M. Ndiaye",    pos:"MC",  club:"Villarreal" },
+      { num:19, name:"N. Jackson",   pos:"AT",  club:"Chelsea" },
+      { num:17, name:"L. Ndiaye",    pos:"AT",  club:"Fulham" },
+    ]
+  },
+  "FRA": {
+    formation: "4-2-3-1", coach: "Didier Deschamps",
+    titulaires: [
+      { num:1,  name:"M. Maignan",   pos:"GB",  club:"AC Milan" },
+      { num:2,  name:"B. Pavard",    pos:"DD",  club:"Inter Milan" },
+      { num:5,  name:"J. Konaté",    pos:"DC",  club:"Liverpool" },
+      { num:4,  name:"D. Upamecano", pos:"DC",  club:"Bayern" },
+      { num:22, name:"T. Hernandez", pos:"DG",  club:"AC Milan" },
+      { num:8,  name:"A. Tchouaméni",pos:"MDC", club:"Real Madrid" },
+      { num:13, name:"N. Kanté",     pos:"MDC", club:"Al-Ittihad" },
+      { num:7,  name:"A. Griezmann", pos:"MOC", club:"Atlético" },
+      { num:11, name:"O. Dembélé",   pos:"AD",  club:"PSG" },
+      { num:14, name:"A. Rabiot",    pos:"AG",  club:"Juventus" },
+      { num:10, name:"K. Mbappé",    pos:"AT",  club:"Real Madrid", captain:true },
+    ],
+    remplacants: [
+      { num:16, name:"A. Areola",    pos:"GB",  club:"West Ham" },
+      { num:17, name:"W. Fofana",    pos:"DC",  club:"Chelsea" },
+      { num:20, name:"M. Camavinga", pos:"MC",  club:"Real Madrid" },
+      { num:15, name:"M. Zaire-Emery",pos:"MC", club:"PSG" },
+      { num:9,  name:"O. Giroud",    pos:"AT",  club:"LA Galaxy" },
+    ]
+  },
+};
+
+function getH2HKey(t1code, t2code) {
+  const key1 = `${t1code}_${t2code}`;
+  const key2 = `${t2code}_${t1code}`;
+  return H2H_DATA[key1] ? { data: H2H_DATA[key1], reversed: false }
+    : H2H_DATA[key2] ? { data: H2H_DATA[key2], reversed: true }
+    : null;
+}
+
 /* ══ PAGE DÉTAIL MATCH ══ */
 function MatchDetailPage({ T, match, onClose }) {
   const [tab, setTab] = useState("avantmatch");
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
-    const matchDate = new Date("2026-06-11T21:00:00");
+    const matchDate = new Date(match.date.includes("2026") ? 
+      `2026-${match.date.replace(/\D/g,"").padStart(4,"0")}-${match.time.replace("h",":")}:00` : 
+      "2026-06-11T21:00:00");
     const timer = setInterval(() => {
       const now = new Date();
       const diff = matchDate - now;
-      if (diff <= 0) { setCountdown("EN COURS"); clearInterval(timer); return; }
+      if (diff <= 0) { clearInterval(timer); return; }
       const h = Math.floor(diff/3600000);
-      const m = Math.floor((diff%3600000)/60000);
+      const m2 = Math.floor((diff%3600000)/60000);
       const s = Math.floor((diff%60000)/1000);
-      setCountdown(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
+      setCountdown(`${String(h).padStart(2,"0")}:${String(m2).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [match]);
 
-  const squad1 = SQUADS[match.t1] || SQUADS[Object.keys(SQUADS).find(k=>k.includes(match.t1code||"MEX"))||""];
-  const squad2 = SQUADS[match.t2] || SQUADS[Object.keys(SQUADS).find(k=>k.includes(match.t2code||"RSA"))||""];
+  // Compos officielles d'abord, sinon probables
+  const getSquad = (code, name) => {
+    const official = SQUADS[name] || Object.values(SQUADS).find(s => Object.keys(SQUADS).find(k => k.includes(code)));
+    const probable = PROBABLE_SQUADS[code];
+    return { squad: official || probable, isProbable: !official && !!probable };
+  };
+
+  const { squad: squad1, isProbable: ip1 } = getSquad(match.t1code, match.t1);
+  const { squad: squad2, isProbable: ip2 } = getSquad(match.t2code, match.t2);
+
+  const h2hInfo = getH2HKey(match.t1code, match.t2code);
+  const formeColor = (r) => r==="G"?"#00C853":r==="P"?"#EF4444":"#F59E0B";
 
   const tabs = [
     ["avantmatch","Avant-Match"],
     ["compos","Compos"],
+    ["h2h","H2H"],
     ["classement","Classement"],
     ["infos","Infos"],
   ];
 
-  const formeColor = (r) => r==="G"?"#00C853":r==="P"?"#EF4444":"#F59E0B";
+  const renderLineup = (squad, code, isProbable) => {
+    if (!squad) return (
+      <div style={{ background:T.card, borderRadius:12, padding:20, textAlign:"center", marginBottom:16 }}>
+        <div style={{ fontSize:14, color:T.muted, marginBottom:8 }}>Composition {code} non encore disponible</div>
+        <div style={{ fontSize:11, color:T.muted }}>Les compos officielles sortent ~1h avant le match</div>
+      </div>
+    );
+    const gk = squad.titulaires?.filter(p=>p.pos==="GB")||[];
+    const def = squad.titulaires?.filter(p=>["DC","DD","DG"].includes(p.pos))||[];
+    const mid = squad.titulaires?.filter(p=>["MDC","MC","MOC","MG","MD"].includes(p.pos))||[];
+    const att = squad.titulaires?.filter(p=>["AT","AG","AD"].includes(p.pos))||[];
+    return (
+      <div style={{ marginBottom:20 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:A.gold }}>{code} · {squad.formation} · {squad.coach}</div>
+          {isProbable && <div style={{ fontSize:10, color:A.gold, background:A.gold+"18", padding:"2px 8px", borderRadius:20, border:`1px solid ${A.gold}33` }}>⚠️ PROBABLE</div>}
+        </div>
+        <div style={{ background:"linear-gradient(180deg,#0A3D1F,#0D6B35,#0A3D1F)", borderRadius:14, padding:"16px 8px", marginBottom:10, position:"relative" }}>
+          <div style={{ position:"absolute", top:"50%", left:"10%", right:"10%", height:1, background:"rgba(255,255,255,0.1)" }} />
+          <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:70, height:70, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.1)" }} />
+          {[att,mid,def,gk].map((line,li) => (
+            <div key={li} style={{ display:"flex", justifyContent:"space-evenly", marginBottom:14, position:"relative", zIndex:1 }}>
+              {line.map((p,i) => (
+                <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, minWidth:48 }}>
+                  <div style={{ position:"relative" }}>
+                    <div style={{ width:38, height:38, borderRadius:"50%", background:`linear-gradient(135deg,${POS_COLORS[p.pos]||A.gold}CC,${POS_COLORS[p.pos]||A.gold}66)`, border:`2px solid ${POS_COLORS[p.pos]||A.gold}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:"#fff" }}>
+                      {p.name.split(" ").map(x=>x[0]).slice(0,2).join("")}
+                    </div>
+                    {p.captain && <div style={{ position:"absolute", top:-4, right:-4, width:14, height:14, borderRadius:"50%", background:A.gold, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, fontWeight:900, color:"#000" }}>C</div>}
+                    <div style={{ position:"absolute", bottom:-2, right:-2, width:16, height:16, borderRadius:"50%", background:"#0A0A14", display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, fontWeight:900, color:POS_COLORS[p.pos]||A.gold }}>{p.num}</div>
+                  </div>
+                  <div style={{ fontSize:8, color:"#fff", fontWeight:700, textAlign:"center", maxWidth:48, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textShadow:"0 1px 3px #000" }}>{p.name.split(" ").pop()}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        {squad.remplacants?.length > 0 && (
+          <div style={{ background:T.card, borderRadius:10, padding:"10px 12px" }}>
+            <div style={{ fontSize:9, color:T.muted, fontWeight:800, marginBottom:8, letterSpacing:1 }}>REMPLAÇANTS</div>
+            <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4 }}>
+              {squad.remplacants.map((p,i) => (
+                <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, minWidth:42 }}>
+                  <div style={{ width:32, height:32, borderRadius:"50%", background:"#2A2A3E", border:"1px solid #3A3A4E", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:"#888" }}>{p.num}</div>
+                  <div style={{ fontSize:8, color:"#666", textAlign:"center", maxWidth:42, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name.split(" ").pop()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:T.bg, zIndex:900, display:"flex", flexDirection:"column", overflowY:"hidden" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:T.bg, zIndex:900, display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
-      {/* HEADER VERT STYLE BESOCCER */}
-      <div style={{ background:"linear-gradient(180deg,#1A5C2A,#0D3D1A)", padding:"12px 16px 0", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-          <button onClick={onClose} style={{ background:"transparent", border:"none", color:"#fff", fontSize:20, cursor:"pointer", padding:4 }}>←</button>
-          <div style={{ flex:1, textAlign:"center", fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:1 }}>
-            COUPE DU MONDE · GROUPE {match.group} · JOURNÉE {match.journee}
+      {/* HEADER VERT */}
+      <div style={{ background:"linear-gradient(180deg,#1A5C2A,#0D3D1A)", paddingTop:`calc(env(safe-area-inset-top, 0px) + 10px)`, paddingLeft:16, paddingRight:16, paddingBottom:0, flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", marginBottom:10 }}>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", padding:"6px 10px", borderRadius:8 }}>←</button>
+          <div style={{ flex:1, textAlign:"center", fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:1 }}>
+            COUPE DU MONDE · GROUPE {match.group} · J{match.journee}
           </div>
+          {match.tv && <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)" }}>📺 {match.tv.split("·")[0]}</div>}
         </div>
 
-        {/* ÉQUIPES + SCORE/HEURE */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-around", marginBottom:14 }}>
-          {/* Équipe 1 */}
+        {/* ÉQUIPES */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, padding:"0 8px" }}>
           <div style={{ textAlign:"center", flex:1 }}>
-            <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 6px" }}>{match.t1flag}</div>
-            <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:1 }}>{match.t1code}</div>
+            <div style={{ fontSize:40, marginBottom:4 }}>{match.t1flag}</div>
+            <div style={{ fontSize:12, fontWeight:900, color:"#fff", letterSpacing:1 }}>{match.t1code}</div>
           </div>
-
-          {/* Score central */}
-          <div style={{ textAlign:"center", flex:1.2 }}>
-            {match.status==="live" ? (
-              <div style={{ fontSize:36, fontWeight:900, color:"#fff" }}>{match.score}</div>
+          <div style={{ textAlign:"center", flex:1.4 }}>
+            {match.status==="fini" ? (
+              <div>
+                <div style={{ fontSize:38, fontWeight:900, color:"#fff", fontFamily:"monospace", letterSpacing:2 }}>{match.score}</div>
+                <div style={{ fontSize:11, color:"#4ADE80", fontWeight:800, marginTop:2 }}>TERMINÉ</div>
+                {match.scoreur_t1 && <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", marginTop:4 }}>⚽ {match.scoreur_t1}</div>}
+              </div>
+            ) : match.status==="live" ? (
+              <div>
+                <div style={{ fontSize:38, fontWeight:900, color:"#fff", fontFamily:"monospace" }}>{match.score||"0-0"}</div>
+                <div style={{ fontSize:11, color:"#EF4444", fontWeight:800, display:"flex", alignItems:"center", gap:4, justifyContent:"center" }}><Dot color="#EF4444" size={7}/>EN DIRECT</div>
+              </div>
             ) : (
-              <div style={{ fontSize:28, fontWeight:900, color:"#fff" }}>{match.time}</div>
+              <div>
+                <div style={{ fontSize:30, fontWeight:900, color:"#fff" }}>{match.time}</div>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>{match.date.split(" ").slice(0,2).join(" ").toUpperCase()}</div>
+                {countdown && <div style={{ fontSize:12, color:"#4ADE80", fontFamily:"monospace", marginTop:4, fontWeight:700 }}>{countdown}</div>}
+              </div>
             )}
-            <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{match.date.split(" ").slice(0,2).join(" ").toUpperCase()}</div>
-            {countdown && <div style={{ fontSize:11, color:"#4ADE80", fontFamily:"monospace", marginTop:4, fontWeight:700 }}>{countdown}</div>}
           </div>
-
-          {/* Équipe 2 */}
           <div style={{ textAlign:"center", flex:1 }}>
-            <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 6px" }}>{match.t2flag}</div>
-            <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:1 }}>{match.t2code}</div>
+            <div style={{ fontSize:40, marginBottom:4 }}>{match.t2flag}</div>
+            <div style={{ fontSize:12, fontWeight:900, color:"#fff", letterSpacing:1 }}>{match.t2code}</div>
           </div>
         </div>
 
         {/* TABS */}
-        <div style={{ display:"flex", overflowX:"auto", borderTop:"1px solid rgba(255,255,255,0.15)" }}>
+        <div style={{ display:"flex", overflowX:"auto", borderTop:"1px solid rgba(255,255,255,0.12)", WebkitOverflowScrolling:"touch" }}>
           {tabs.map(([v,l])=>(
-            <button key={v} onClick={()=>setTab(v)} style={{ flexShrink:0, padding:"10px 14px", background:"transparent", border:"none", borderBottom:`2px solid ${tab===v?"#fff":"transparent"}`, color:tab===v?"#fff":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:800, cursor:"pointer", letterSpacing:0.5, whiteSpace:"nowrap" }}>{l.toUpperCase()}</button>
+            <button key={v} onClick={()=>setTab(v)} style={{ flexShrink:0, padding:"10px 12px", background:"transparent", border:"none", borderBottom:`2px solid ${tab===v?"#fff":"transparent"}`, color:tab===v?"#fff":"rgba(255,255,255,0.5)", fontSize:11, fontWeight:800, cursor:"pointer", letterSpacing:0.5 }}>{l}</button>
           ))}
         </div>
       </div>
 
       {/* CONTENU */}
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px", WebkitOverflowScrolling:"touch" }}>
 
         {/* ══ AVANT MATCH ══ */}
         {tab==="avantmatch" && (
           <div>
+            {match.hot && (
+              <div style={{ background:`linear-gradient(135deg,${A.gold}0A,${T.card})`, border:`1px solid ${A.gold}44`, borderRadius:14, padding:"12px 16px", marginBottom:16, textAlign:"center" }}>
+                <div style={{ fontSize:14, fontWeight:900, color:A.gold }}>🔥 CHOC HISTORIQUE</div>
+                <div style={{ fontSize:12, color:T.muted, marginTop:4 }}>Le match le plus attendu du Groupe {match.group}</div>
+              </div>
+            )}
+
             {/* COTES */}
             <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
               <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:10 }}>COTES</div>
               <div style={{ display:"flex", gap:8 }}>
-                {[["1",match.t1code,match.cotes.t1,A.green],["X","NUL",match.cotes.nul,A.gold],["2",match.t2code,match.cotes.t2,A.red]].map(([s,l,c,col])=>(
-                  <div key={s} style={{ flex:1, textAlign:"center", background:T.bg, borderRadius:10, padding:"10px 6px" }}>
+                {[["1",match.t1code,match.cotes?.t1||"-",A.green],["X","NUL",match.cotes?.nul||"-",A.gold],["2",match.t2code,match.cotes?.t2||"-",A.red]].map(([s,l,c,col])=>(
+                  <div key={s} style={{ flex:1, textAlign:"center", background:T.bg, borderRadius:10, padding:"10px 4px" }}>
                     <div style={{ fontSize:10, color:T.muted, marginBottom:4 }}>{s} · {l}</div>
-                    <div style={{ fontSize:18, fontWeight:900, color:col, fontFamily:"monospace" }}>{c}</div>
+                    <div style={{ fontSize:20, fontWeight:900, color:col, fontFamily:"monospace" }}>{c}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* FORME RÉCENTE */}
+            {/* FORME */}
             <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
-              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>FORME RÉCENTE</div>
-              {[{name:match.t1code, forme:match.forme_t1},{name:match.t2code, forme:match.forme_t2}].map((team,ti)=>(
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>FORME RÉCENTE (5 DERNIERS MATCHS)</div>
+              {[{code:match.t1code,forme:match.forme_t1||[]},{code:match.t2code,forme:match.forme_t2||[]}].map((team,ti)=>(
                 <div key={ti} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:ti===0?12:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.text, width:40 }}>{team.name}</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:T.text, width:44 }}>{team.code}</div>
                   <div style={{ display:"flex", gap:5 }}>
                     {team.forme.map((r,i)=>(
-                      <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:formeColor(r), display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:"#fff" }}>{r}</div>
+                      <div key={i} style={{ width:28, height:28, borderRadius:"50%", background:formeColor(r), display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:"#fff", boxShadow:`0 2px 6px ${formeColor(r)}44` }}>{r}</div>
                     ))}
+                  </div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.muted }}>
+                    {team.forme.filter(r=>r==="G").length}V {team.forme.filter(r=>r==="N").length}N {team.forme.filter(r=>r==="P").length}D
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* H2H */}
-            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
-              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>DERNIERS AFFRONTEMENTS</div>
-              {match.h2h.map((h,i)=>(
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:i<match.h2h.length-1?`1px solid ${T.border}`:"none" }}>
-                  <div style={{ fontSize:11, color:T.muted, width:36 }}>{h.date}</div>
-                  <div style={{ flex:1, fontSize:11, color:T.muted }}>{h.comp}</div>
-                  <div style={{ fontSize:14, fontWeight:900, fontFamily:"monospace", color:h.winner==="draw"?A.gold:h.winner==="t1"?A.green:A.red }}>{h.score}</div>
+            {/* H2H RÉSUMÉ */}
+            {h2hInfo && (
+              <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
+                <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>CONFRONTATIONS DIRECTES</div>
+                <div style={{ display:"flex", gap:0, marginBottom:14 }}>
+                  {[
+                    { label:match.t1code, v:h2hInfo.data.stats.t1_wins, c:A.green },
+                    { label:"NUL", v:h2hInfo.data.stats.draws, c:A.gold },
+                    { label:match.t2code, v:h2hInfo.data.stats.t2_wins, c:A.red },
+                  ].map((x,i)=>(
+                    <div key={i} style={{ flex:1, textAlign:"center", padding:"10px 4px", background:i===0?A.green+"0A":i===2?A.red+"0A":"transparent", borderRadius:8 }}>
+                      <div style={{ fontSize:28, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.v}</div>
+                      <div style={{ fontSize:10, color:T.muted, marginTop:2 }}>{x.label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                {h2hInfo.data.results.slice(0,2).map((r,i)=>(
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0", borderTop:`1px solid ${T.border}` }}>
+                    <span style={{ fontSize:11, color:T.muted, width:40 }}>{r.date.slice(6)}</span>
+                    <span style={{ fontSize:11, color:T.muted, flex:1 }}>{r.comp}</span>
+                    <span style={{ fontSize:13, fontWeight:900, fontFamily:"monospace", color:r.winner==="draw"?A.gold:r.winner==="t1"?A.green:A.red }}>{r.score}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* INFOS MATCH */}
+            {/* INFOS */}
             <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14 }}>
-              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>INFORMATION DU MATCH</div>
-              {[["📺","Diffusion",match.tv],["🏟️","Stade",match.venue],["🏙️","Ville",match.city],["🎙️","Arbitre",match.arbitre]].map(([ico,l,v])=>(
-                <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"9px 0", borderBottom:`1px solid ${T.border}` }}>
-                  <div style={{ fontSize:12, color:T.muted }}>{ico} {l}</div>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"right", maxWidth:"55%" }}>{v}</div>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>INFORMATION</div>
+              {[["📺","TV",match.tv],["🏟️","Stade",match.venue+" · "+match.city],["🎙️","Arbitre",match.arbitre]].map(([ico,l,v])=>v&&(
+                <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${T.border}` }}>
+                  <span style={{ fontSize:12, color:T.muted }}>{ico} {l}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"right", maxWidth:"60%" }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -1395,64 +1639,95 @@ function MatchDetailPage({ T, match, onClose }) {
         {/* ══ COMPOS ══ */}
         {tab==="compos" && (
           <div>
-            {[{squad:squad1,team:match.t1,code:match.t1code},{squad:squad2,team:match.t2,code:match.t2code}].map(({squad,team,code},ti)=>(
-              squad ? (
-                <div key={ti} style={{ marginBottom:20 }}>
-                  <div style={{ fontSize:11, fontWeight:800, color:A.gold, letterSpacing:2, marginBottom:10 }}>{code} · {squad.formation} · {squad.coach}</div>
-                  <div style={{ background:"linear-gradient(180deg,#0A3D1F,#0D6B35,#0A3D1F)", borderRadius:14, padding:"16px 8px", marginBottom:12 }}>
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 14px", marginBottom:16, display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:16 }}>ℹ️</span>
+              <span style={{ fontSize:11, color:T.muted }}>Compos officielles disponibles ~1h avant le match. Sinon compositions probables.</span>
+            </div>
+            {renderLineup(squad1, match.t1code, ip1)}
+            {renderLineup(squad2, match.t2code, ip2)}
+          </div>
+        )}
+
+        {/* ══ H2H COMPLET ══ */}
+        {tab==="h2h" && (
+          <div>
+            {h2hInfo ? (
+              <div>
+                {/* Stats globales */}
+                <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:16, marginBottom:14 }}>
+                  <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:14 }}>BILAN HISTORIQUE</div>
+                  <div style={{ display:"flex", marginBottom:16 }}>
                     {[
-                      squad.titulaires.filter(p=>["AT","AG","AD"].includes(p.pos)),
-                      squad.titulaires.filter(p=>["MDC","MC","MOC","MG","MD"].includes(p.pos)),
-                      squad.titulaires.filter(p=>["DC","DD","DG"].includes(p.pos)),
-                      squad.titulaires.filter(p=>p.pos==="GB"),
-                    ].map((line,li)=>(
-                      <div key={li} style={{ display:"flex", justifyContent:"space-evenly", marginBottom:14 }}>
-                        {line.map((p,i)=><PlayerDot key={i} p={p} color={POS_COLORS[p.pos]||A.gold} size={38}/>)}
+                      { label:match.t1, v:h2hInfo.data.stats.t1_wins, c:A.green },
+                      { label:"Nul", v:h2hInfo.data.stats.draws, c:A.gold },
+                      { label:match.t2, v:h2hInfo.data.stats.t2_wins, c:A.red },
+                    ].map((x,i)=>(
+                      <div key={i} style={{ flex:1, textAlign:"center" }}>
+                        <div style={{ fontSize:36, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.v}</div>
+                        <div style={{ fontSize:10, color:T.muted, marginTop:4 }}>{x.label.split(" ").slice(-1)[0]}</div>
                       </div>
                     ))}
                   </div>
-                  {squad.remplacants?.length>0 && (
-                    <div style={{ background:T.card, borderRadius:10, padding:"10px 12px" }}>
-                      <div style={{ fontSize:9, color:T.muted, fontWeight:800, marginBottom:8 }}>REMPLAÇANTS</div>
-                      <div style={{ display:"flex", gap:10, overflowX:"auto" }}>
-                        {squad.remplacants.map((p,i)=><PlayerDot key={i} p={p} color="#555" size={32}/>)}
-                      </div>
+                  {/* Barre de forme visuelle */}
+                  <div style={{ height:8, borderRadius:4, overflow:"hidden", display:"flex", marginBottom:8 }}>
+                    {[
+                      { w: h2hInfo.data.stats.t1_wins, c:A.green },
+                      { w: h2hInfo.data.stats.draws, c:A.gold },
+                      { w: h2hInfo.data.stats.t2_wins, c:A.red },
+                    ].map((x,i) => x.w > 0 && (
+                      <div key={i} style={{ flex:x.w, background:x.c, opacity:0.8 }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Résultats détaillés */}
+                <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:10 }}>DERNIÈRES RENCONTRES</div>
+                {h2hInfo.data.results.map((r,i)=>(
+                  <div key={i} style={{ background:T.card, border:`1px solid ${r.winner==="t1"?A.green+"33":r.winner==="t2"?A.red+"33":A.gold+"33"}`, borderRadius:12, padding:14, marginBottom:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                      <span style={{ fontSize:11, color:T.muted }}>{r.date}</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:T.muted }}>{r.comp}</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div key={ti} style={{ background:T.card, borderRadius:12, padding:20, textAlign:"center", color:T.muted, marginBottom:16 }}>
-                  Compo {code} non disponible
-                </div>
-              )
-            ))}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <span style={{ fontSize:14, fontWeight:700, color:r.winner==="t1"?A.green:T.text }}>{match.t1code}</span>
+                      <span style={{ fontSize:22, fontWeight:900, fontFamily:"monospace", color:r.winner==="draw"?A.gold:r.winner==="t1"?A.green:A.red }}>{r.score}</span>
+                      <span style={{ fontSize:14, fontWeight:700, color:r.winner==="t2"?A.red:T.text }}>{match.t2code}</span>
+                    </div>
+                    {r.scorers && <div style={{ fontSize:11, color:A.gold }}>⚽ {r.scorers}</div>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ background:T.card, borderRadius:12, padding:20, textAlign:"center" }}>
+                <div style={{ fontSize:32, marginBottom:8 }}>⚔️</div>
+                <div style={{ fontSize:14, color:T.muted }}>Pas d'historique disponible entre ces deux équipes</div>
+              </div>
+            )}
           </div>
         )}
 
         {/* ══ CLASSEMENT ══ */}
         {tab==="classement" && (
-          <div>
-            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:A.gold, letterSpacing:2, marginBottom:12 }}>GROUPE {match.group} · JOURNÉE {match.journee}</div>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                <span style={{ fontSize:10, color:T.muted, flex:3 }}>ÉQUIPE</span>
-                {["MJ","MG","MN","MP","BM","BE","Pts"].map(h=>(
-                  <span key={h} style={{ fontSize:10, color:T.muted, textAlign:"center", width:24 }}>{h}</span>
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:A.gold, letterSpacing:2, marginBottom:14 }}>GROUPE {match.group}</div>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8, padding:"0 4px" }}>
+              <span style={{ fontSize:10, color:T.muted, flex:3 }}>ÉQUIPE</span>
+              {["MJ","V","N","D","BP","BC","Pts"].map(h=>(
+                <span key={h} style={{ fontSize:10, color:T.muted, textAlign:"center", width:26 }}>{h}</span>
+              ))}
+            </div>
+            {ALL_GROUPS.find(g=>g.group===match.group)?.teams.map((team,i)=>(
+              <div key={i} style={{ display:"flex", alignItems:"center", padding:"8px 4px", borderTop:`1px solid ${T.border}`, background:team.includes(match.t1code)||team.includes(match.t2code)?A.gold+"06":"transparent", borderRadius:6 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, flex:3 }}>
+                  <div style={{ width:20, height:20, borderRadius:"50%", background:i<3?A.green+"22":"transparent", border:`1px solid ${i<3?A.green:T.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:800, color:i<3?A.green:T.muted }}>{i+1}</div>
+                  <span style={{ fontSize:12, color:T.text, fontWeight:600 }}>{team}</span>
+                </div>
+                {[0,0,0,0,0,0,0].map((v,j)=>(
+                  <span key={j} style={{ fontSize:12, color:j===6?A.gold:T.muted, fontFamily:"monospace", textAlign:"center", width:26, fontWeight:j===6?900:400 }}>0</span>
                 ))}
               </div>
-              {ALL_GROUPS.find(g=>g.group===match.group)?.teams.map((team,i)=>(
-                <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderTop:`1px solid ${T.border}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, flex:3 }}>
-                    <div style={{ width:20, height:20, borderRadius:"50%", background:i<3?A.green+"22":"transparent", border:`1px solid ${i<3?A.green:T.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:800, color:i<3?A.green:T.muted }}>{i+1}</div>
-                    <span style={{ fontSize:12, color:T.text, fontWeight:600 }}>{team}</span>
-                  </div>
-                  {[0,0,0,0,0,0,0].map((v,j)=>(
-                    <span key={j} style={{ fontSize:12, color:j===6?A.gold:T.muted, fontFamily:"monospace", textAlign:"center", width:24, fontWeight:j===6?900:400 }}>0</span>
-                  ))}
-                </div>
-              ))}
-              <div style={{ fontSize:10, color:T.muted, marginTop:8, fontStyle:"italic" }}>↑ Top 3 qualifiés · Tournoi pas encore commencé</div>
-            </div>
+            ))}
+            <div style={{ fontSize:10, color:T.muted, marginTop:10, fontStyle:"italic" }}>↑ Top 3 qualifiés + 8 meilleurs 3èmes</div>
           </div>
         )}
 
@@ -1461,20 +1736,28 @@ function MatchDetailPage({ T, match, onClose }) {
           <div>
             <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
               <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>INFORMATION DU MATCH</div>
-              {[["📺","Diffusion TV",match.tv],["🏟️","Stade",match.venue+" · "+match.city],["🎙️","Arbitre central",match.arbitre],["📅","Date",match.date+" · "+match.time],["🌍","Groupe","Groupe "+match.group+" · Journée "+match.journee]].map(([ico,l,v])=>(
-                <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${T.border}` }}>
+              {[
+                ["📺","Diffusion TV",match.tv],
+                ["🏟️","Stade",match.venue],
+                ["🏙️","Ville",match.city],
+                ["🎙️","Arbitre",match.arbitre],
+                ["📅","Date & Heure",`${match.date} · ${match.time}`],
+                ["🌍","Groupe",`Groupe ${match.group} · Journée ${match.journee}`],
+              ].map(([ico,l,v])=>v&&(
+                <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", borderBottom:`1px solid ${T.border}` }}>
                   <div style={{ fontSize:12, color:T.muted }}>{ico} {l}</div>
                   <div style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"right", maxWidth:"55%" }}>{v}</div>
                 </div>
               ))}
             </div>
-
-            <div style={{ background:T.card, border:`1px solid ${A.green}33`, borderRadius:12, padding:14 }}>
-              <div style={{ fontSize:10, color:A.green, fontWeight:800, letterSpacing:2, marginBottom:10 }}>🦁 ENJEU POUR LE SÉNÉGAL</div>
-              <div style={{ fontSize:13, color:T.text, lineHeight:1.7 }}>
-                Match d'ouverture de la CDM 2026. Le Mexique, pays organisateur, affronte l'Afrique du Sud. Ce résultat influencera les classements dans le groupe A avant que le Sénégal entre en lice le 16 Juin contre la France.
+            {match.t1.includes("Sénégal") || match.t2.includes("Sénégal") ? (
+              <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:12, padding:14 }}>
+                <div style={{ fontSize:10, color:A.green, fontWeight:800, letterSpacing:2, marginBottom:10 }}>🦁 ENJEU POUR LE SÉNÉGAL</div>
+                <div style={{ fontSize:13, color:T.text, lineHeight:1.7 }}>
+                  Match crucial pour les Lions ! Une victoire assurerait une belle position dans le Groupe {match.group} avant les matchs suivants. La communauté sénégalaise du monde entier sera derrière les Lions 🇸🇳
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -1482,7 +1765,7 @@ function MatchDetailPage({ T, match, onClose }) {
   );
 }
 
-/* ══ MATCHES TAB ══ */
+
 function MatchesTab({ T, user }) {
   const [view, setView] = useState("groupes");
   const [squadView, setSquadView] = useState(null);
@@ -1541,7 +1824,9 @@ function MatchesTab({ T, user }) {
                       </div>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
                         <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1 }}>{m.t1}</span>
-                        <div style={{ padding:"4px 12px", borderRadius:8, background:m.hot?A.gold+"18":T.card2, fontWeight:900, fontSize:12, color:m.hot?A.gold:T.muted, flexShrink:0 }}>VS</div>
+                        <div style={{ padding:"4px 12px", borderRadius:8, background:m.status==="fini"?"#1A1A2E":m.status==="live"?A.red+"18":m.hot?A.gold+"18":T.card2, fontWeight:900, fontSize:m.status==="fini"?16:12, color:m.status==="fini"?"#fff":m.status==="live"?A.red:m.hot?A.gold:T.muted, flexShrink:0, minWidth:44, textAlign:"center" }}>
+                          {m.status==="fini"?m.score:m.status==="live"?<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}><span>{m.score}</span><span style={{fontSize:9,color:A.red}}>LIVE</span></span>:"VS"}
+                        </div>
                         <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1, textAlign:"right" }}>{m.t2}</span>
                       </div>
                       <div style={{ display:"flex", justifyContent:"space-between" }}>
@@ -2436,26 +2721,35 @@ function PronosticsTab({ T, user }) {
 }
 function LiveScoreWidget({ T }) {
   const [liveMatches, setLiveMatches] = useState([]);
+  const [finished, setFinished] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [activeTab, setActiveTab] = useState("live");
 
   const refresh = async () => {
     setLoading(true);
-    const [live, sched] = await Promise.all([fetchRealTimeMatches(), fetchUpcomingMatches()]);
-    if (live) setLiveMatches(live);
-    if (sched) setUpcoming(sched);
+    const [live, fin, sched] = await Promise.all([
+      fetchRealTimeMatches(),
+      fetchFinishedMatches(),
+      fetchUpcomingMatches()
+    ]);
+    setLiveMatches(live);
+    setFinished(fin);
+    setUpcoming(sched);
     setLastUpdate(new Date());
     setLoading(false);
+    // Auto switch tab
+    if (live.length > 0) setActiveTab("live");
+    else if (fin.length > 0) setActiveTab("finished");
+    else setActiveTab("upcoming");
   };
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, 60000);
+    const id = setInterval(refresh, 30000);
     return () => clearInterval(id);
   }, []);
-
-  const hasKey = !!DATA_CONFIG.FOOTBALL_DATA_KEY;
 
   const formatScore = (m) => {
     const h = m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? "–";
@@ -2463,13 +2757,39 @@ function LiveScoreWidget({ T }) {
     return `${h} – ${a}`;
   };
 
+  const formatStatus = (m) => {
+    if (m.status === "FINISHED") return "FIN";
+    if (m.status === "IN_PLAY") return `${m.minute || ""}'`;
+    if (m.status === "HALF_TIME") return "MT";
+    if (m.status === "PAUSED") return "MT";
+    return m.status;
+  };
+
+  const MatchCard = ({ m, showScore }) => (
+    <div style={{ background:T.bg, borderRadius:12, padding:"10px 14px", marginBottom:8, border:`1px solid ${T.border}` }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+        <span style={{ fontSize:10, color:T.muted }}>Groupe {m.group?.replace("Group ","") || "CDM"}</span>
+        <span style={{ fontSize:10, fontWeight:800, color:m.status==="IN_PLAY"?A.red:m.status==="FINISHED"?A.green:A.gold }}>
+          {formatStatus(m)}
+        </span>
+      </div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1 }}>{m.homeTeam?.shortName || m.homeTeam?.name}</span>
+        <div style={{ padding:"5px 12px", borderRadius:8, background:m.status==="IN_PLAY"?A.red+"18":T.card2, fontFamily:"monospace", fontWeight:900, fontSize:14, color:m.status==="IN_PLAY"?A.red:T.text, minWidth:50, textAlign:"center" }}>
+          {showScore ? formatScore(m) : m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS"}
+        </div>
+        <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName || m.awayTeam?.name}</span>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ background:T.card, border:`1px solid ${hasKey?A.green+"44":T.border}`, borderRadius:16, padding:18, marginBottom:14 }}>
+    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:14 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <Dot color={hasKey?A.green:T.muted}/>
-          <span style={{ fontSize:11, fontWeight:800, letterSpacing:1.5, color:hasKey?A.green:T.muted }}>
-            {hasKey ? "DONNÉES LIVE · CDM 2026" : "MODE DÉMO"}
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          {liveMatches.length > 0 && <Dot color={A.red}/>}
+          <span style={{ fontSize:11, fontWeight:800, color:liveMatches.length>0?A.red:A.green, letterSpacing:1 }}>
+            {liveMatches.length > 0 ? `${liveMatches.length} EN DIRECT` : "CDM 2026"}
           </span>
         </div>
         <button onClick={refresh} disabled={loading} style={{ background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>
@@ -2477,739 +2797,41 @@ function LiveScoreWidget({ T }) {
         </button>
       </div>
 
-      {liveMatches.length > 0 && (
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:10, color:A.red, fontWeight:800, letterSpacing:2, marginBottom:8, display:"flex", gap:6, alignItems:"center" }}><Dot/> EN DIRECT</div>
-          {liveMatches.map((m,i) => (
-            <div key={i} style={{ background:T.bg, borderRadius:12, padding:"12px 14px", marginBottom:8, border:`1px solid ${A.red}33` }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1 }}>{m.homeTeam?.shortName || m.homeTeam?.name}</span>
-                <div style={{ textAlign:"center", padding:"0 10px" }}>
-                  <div style={{ fontSize:20, fontWeight:900, fontFamily:"monospace", color:A.red }}>{formatScore(m)}</div>
-                  <div style={{ fontSize:9, color:A.red, fontWeight:700 }}>LIVE</div>
-                </div>
-                <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName || m.awayTeam?.name}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* TABS */}
+      <div style={{ display:"flex", gap:4, marginBottom:12 }}>
+        {[["live",`🔴 Live (${liveMatches.length})`],["finished",`✅ Finis (${finished.length})`],["upcoming","📅 À venir"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setActiveTab(v)} style={{ flex:1, padding:"6px 4px", borderRadius:8, border:`1px solid ${activeTab===v?A.gold:T.border}`, background:activeTab===v?A.gold+"14":"transparent", color:activeTab===v?A.gold:T.muted, fontSize:10, fontWeight:700, cursor:"pointer" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* LIVE */}
+      {activeTab==="live" && (
+        liveMatches.length > 0
+          ? liveMatches.map((m,i) => <MatchCard key={i} m={m} showScore={true}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Aucun match en direct · Prochain: {upcoming[0]?.homeTeam?.shortName} vs {upcoming[0]?.awayTeam?.shortName}</div>
       )}
 
-      {liveMatches.length === 0 && upcoming.length > 0 && (
-        <div>
-          <div style={{ fontSize:10, color:A.gold, fontWeight:800, letterSpacing:2, marginBottom:8 }}>📅 PROCHAINS MATCHS</div>
-          {upcoming.slice(0,3).map((m,i) => {
-            const d = new Date(m.utcDate);
-            return (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:i<2?`1px solid ${T.border}`:"none" }}>
-                <span style={{ fontSize:12, fontWeight:600, color:T.text, flex:1 }}>{m.homeTeam?.shortName || m.homeTeam?.name}</span>
-                <div style={{ textAlign:"center", padding:"0 8px" }}>
-                  <div style={{ fontSize:10, fontWeight:800, color:A.gold }}>VS</div>
-                  <div style={{ fontSize:10, color:T.muted }}>{d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})}</div>
-                </div>
-                <span style={{ fontSize:12, fontWeight:600, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName || m.awayTeam?.name}</span>
-              </div>
-            );
-          })}
-        </div>
+      {/* FINIS */}
+      {activeTab==="finished" && (
+        finished.length > 0
+          ? finished.map((m,i) => <MatchCard key={i} m={m} showScore={true}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Pas encore de matchs terminés</div>
       )}
 
-      {liveMatches.length === 0 && upcoming.length === 0 && (
-        <div style={{ textAlign:"center", padding:"12px 0" }}>
-          <div style={{ fontSize:24, marginBottom:6 }}>⏰</div>
-          <div style={{ fontSize:13, color:T.muted }}>CDM 2026 · 11 Juin → 19 Juillet</div>
-          <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>MetLife Stadium · New York · Finale 19 Juillet</div>
-        </div>
+      {/* À VENIR */}
+      {activeTab==="upcoming" && (
+        upcoming.length > 0
+          ? upcoming.map((m,i) => <MatchCard key={i} m={m} showScore={false}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Programme à venir</div>
       )}
 
       {lastUpdate && (
-        <div style={{ fontSize:10, color:T.muted, marginTop:10, textAlign:"right" }}>
-          Mis à jour : {lastUpdate.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit",second:"2-digit"})}
+        <div style={{ fontSize:10, color:T.muted, marginTop:8, textAlign:"right" }}>
+          🔄 {lastUpdate.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
         </div>
       )}
     </div>
   );
 }
 
-/* ══ COMMUNITY COMMENTS ══ */
-function CommunityTab({ T, user }) {
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [topic, setTopic] = useState("senegal");
-  const [filter, setFilter] = useState("tous");
-  const [liked, setLiked] = useState({});
-  const [posting, setPosting] = useState(false);
-  const userId = getUserId();
 
-  const topics = [
-    { id:"senegal", label:"🦁 Lions",    color:A.green },
-    { id:"groupeD", label:"⚔️ Groupe D", color:A.gold },
-    { id:"ia",      label:"🤖 IA",       color:A.blue },
-    { id:"general", label:"🌍 Général",  color:"#8888AA" },
-  ];
-
-  const loadComments = async () => {
-    const data = await fbGet("comments");
-    data.sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
-    setComments(data);
-    const myLikes = {};
-    data.forEach(c => { if ((c.likedBy||[]).includes(userId)) myLikes[c.id] = true; });
-    setLiked(myLikes);
-  };
-
-  useEffect(() => {
-    loadComments();
-    const interval = setInterval(loadComments, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const timeAgo = (iso) => {
-    if (!iso) return "À l'instant";
-    const diff = Math.floor((new Date() - new Date(iso)) / 1000);
-    if (diff < 60) return "À l'instant";
-    if (diff < 3600) return `Il y a ${Math.floor(diff/60)}min`;
-    if (diff < 86400) return `Il y a ${Math.floor(diff/3600)}h`;
-    return `Il y a ${Math.floor(diff/86400)}j`;
-  };
-
-  const handleLike = async (c) => {
-    if (liked[c.id]) return;
-    const newLikedBy = [...(c.likedBy||[]), userId];
-    const newLikes = (parseInt(c.likes)||0) + 1;
-    setLiked(p=>({...p,[c.id]:true}));
-    setComments(prev=>prev.map(x=>x.id===c.id?{...x,likes:newLikes,likedBy:newLikedBy}:x));
-    await fbUpdate("comments", c.id, { likes: newLikes, likedBy: newLikedBy });
-  };
-
-  const handleSubmit = async () => {
-    if (!newComment.trim() || posting) return;
-    setPosting(true);
-    const id = await fbAdd("comments", {
-      name: user?.name || "Lion Anonyme",
-      flag: "🇸🇳",
-      text: newComment.trim(),
-      topic,
-      likes: 0,
-      likedBy: [],
-      userId,
-    });
-    setNewComment("");
-    await loadComments();
-    setPosting(false);
-  };
-
-  const filtered = filter==="tous" ? comments : comments.filter(c=>c.topic===filter);
-  const topicColor = (t) => topics.find(x=>x.id===t)?.color || "#8888AA";
-  const topicLabel = (t) => topics.find(x=>x.id===t)?.label || t;
-
-  return (
-    <div style={{ animation:"fadeIn 0.3s ease" }}>
-      <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:16, padding:"14px 16px", marginBottom:16 }}>
-        <div style={{ fontSize:13, fontWeight:800, color:A.green, marginBottom:4 }}>💬 FORUM LIONS ARENA</div>
-        <div style={{ fontSize:11, color:T.muted }}>Donne ton avis · Temps réel · Visible par tous 🔥</div>
-        <div style={{ marginTop:10, display:"flex", gap:8 }}>
-          <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
-            <div style={{ fontSize:18, fontWeight:900, color:A.gold }}>{comments.length}</div>
-            <div style={{ fontSize:10, color:T.muted }}>Avis</div>
-          </div>
-          <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
-            <div style={{ fontSize:18, fontWeight:900, color:A.green }}>{comments.reduce((a,c)=>a+(parseInt(c.likes)||0),0)}</div>
-            <div style={{ fontSize:10, color:T.muted }}>Likes</div>
-          </div>
-          <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
-            <div style={{ fontSize:14, fontWeight:900, color:A.purple }}>🔄 Live</div>
-            <div style={{ fontSize:10, color:T.muted }}>10s</div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:16 }}>
-        <div style={{ fontSize:11, fontWeight:800, color:T.text, marginBottom:10 }}>✍️ Ton avis, {user?.name || "Lion"} !</div>
-        <div style={{ display:"flex", gap:6, marginBottom:10, flexWrap:"wrap" }}>
-          {topics.map(tp=>(
-            <button key={tp.id} onClick={()=>setTopic(tp.id)} style={{ padding:"4px 10px", borderRadius:20, border:`1px solid ${topic===tp.id?tp.color:T.border}`, background:topic===tp.id?tp.color+"18":"transparent", color:topic===tp.id?tp.color:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{tp.label}</button>
-          ))}
-        </div>
-        <textarea value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Que penses-tu du match Sénégal vs France ?" rows={3}
-          style={{ width:"100%", background:T.input, border:`1px solid ${newComment.trim()?A.green+"55":T.inputBorder}`, borderRadius:12, padding:"10px 14px", fontSize:13, color:T.text, outline:"none", resize:"none", fontFamily:"inherit", lineHeight:1.6 }} />
-        <button onClick={handleSubmit} disabled={!newComment.trim()||posting}
-          style={{ width:"100%", marginTop:10, padding:"11px", background:newComment.trim()&&!posting?`linear-gradient(135deg,${A.green},${A.gold})`:"#1A1A2E", border:"none", borderRadius:12, color:newComment.trim()&&!posting?"#000":T.muted, fontWeight:800, fontSize:13, cursor:newComment.trim()&&!posting?"pointer":"not-allowed" }}>
-          {posting ? "⏳ Publication..." : "🦁 Publier mon avis"}
-        </button>
-      </div>
-
-      <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
-        {[["tous","🌍 Tous"],["senegal","🦁 Lions"],["groupeD","⚔️ Groupe D"],["ia","🤖 IA"],["general","🌍 Général"]].map(([v,l])=>(
-          <button key={v} onClick={()=>setFilter(v)} style={{ flexShrink:0, padding:"6px 12px", borderRadius:20, border:`1px solid ${filter===v?A.gold:T.border}`, background:filter===v?A.gold+"14":"transparent", color:filter===v?A.gold:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{l}</button>
-        ))}
-      </div>
-
-      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-        {filtered.map((c,i)=>(
-          <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ width:32, height:32, borderRadius:"50%", background:A.green+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{c.flag||"🇸🇳"}</div>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
-                  <div style={{ fontSize:10, color:T.muted }}>{timeAgo(c.createdAt)}</div>
-                </div>
-              </div>
-              <div style={{ padding:"3px 8px", borderRadius:20, background:topicColor(c.topic)+"18", border:`1px solid ${topicColor(c.topic)}33` }}>
-                <span style={{ fontSize:10, fontWeight:700, color:topicColor(c.topic) }}>{topicLabel(c.topic)}</span>
-              </div>
-            </div>
-            <div style={{ fontSize:13, color:T.text, lineHeight:1.65, marginBottom:10 }}>{c.text}</div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <button onClick={()=>handleLike(c)} style={{ display:"flex", alignItems:"center", gap:6, background:liked[c.id]?A.gold+"14":"transparent", border:`1px solid ${liked[c.id]?A.gold+"44":T.border}`, borderRadius:20, padding:"5px 12px", cursor:liked[c.id]?"default":"pointer" }}>
-                <span style={{ fontSize:14 }}>{liked[c.id]?"❤️":"🤍"}</span>
-                <span style={{ fontSize:12, fontWeight:700, color:liked[c.id]?A.gold:T.muted }}>{parseInt(c.likes)||0}</span>
-              </button>
-              <span style={{ fontSize:10, color:T.muted }}>#{i+1}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div style={{ textAlign:"center", padding:"30px 0", color:T.muted }}>
-          <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
-          <div style={{ fontSize:13 }}>Sois le premier à donner ton avis !</div>
-        </div>
-      )}
-    </div>
-  );
-}
-/* ══ AI TAB ══ */
-function AITab({ T, user }) {
-  const [mode, setMode] = useState("predict");
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [chat, setChat] = useState([]);
-  const [selMatchGroup, setSelMatchGroup] = useState("D");
-  const [selMatch, setSelMatch] = useState(null);
-  const [matchPrediction, setMatchPrediction] = useState(null);
-  const [predLoading, setPredLoading] = useState(false);
-
-  const AI_SYSTEM_CDM = `Tu es GPT-LIONS, l'IA experte en football de Lions Arena 2026. Tu analyses les matchs de la Coupe du Monde 2026 avec passion et précision. 
-Réponds TOUJOURS en JSON strict avec ce format:
-{
-  "team1": "nom équipe 1",
-  "team2": "nom équipe 2", 
-  "score_predit": "X-X",
-  "winner": "nom du vainqueur ou 'Nul'",
-  "proba_team1": 45,
-  "proba_nul": 25,
-  "proba_team2": 30,
-  "analyse": "2-3 phrases sur le match",
-  "facteur_cle": "le facteur décisif",
-  "joueur_a_surveiller": "nom du joueur"
-}
-Base-toi sur: forme récente, historique h2h, valeur des effectifs, style de jeu, groupe et enjeux.`;
-
-  const predictMatch = async (t1, t2) => {
-    setPredLoading(true);
-    setMatchPrediction(null);
-    const prompt = `Prédit le match ${t1} vs ${t2} de la Coupe du Monde 2026. Réponds uniquement en JSON.`;
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, system:AI_SYSTEM_CDM, messages:[{role:"user",content:prompt}] })
-      });
-      const d = await res.json();
-      const text = d.content?.[0]?.text || "{}";
-      const clean = text.replace(/```json|```/g,"").trim();
-      setMatchPrediction(JSON.parse(clean));
-    } catch { setMatchPrediction(null); }
-    setPredLoading(false);
-  };
-
-  const run = async (prompt) => {
-    if(!prompt?.trim()) return;
-    setLoading(true); setResult(null);
-    const msgs = mode==="live" ? [...chat, {role:"user",content:prompt}] : [{role:"user",content:prompt}];
-    const reply = await askClaude(msgs, AI_SYSTEM);
-    if(mode==="live") setChat(prev=>[...prev,{role:"user",content:prompt},{role:"assistant",content:reply}]);
-    setResult(reply);
-    setLoading(false);
-  };
-
-  const modeConf = {
-    matches:{ label:"⚽ Prédire matchs", color:A.green },
-    predict:{ label:"🦁 Sénégal",       color:A.gold },
-    live:   { label:"🎙️ Commentaire",   color:A.red },
-  };
-
-  const groupData = ALL_GROUPS.find(g=>g.group===selMatchGroup);
-
-  return (
-    <div style={{ animation:"fadeIn 0.3s ease", width:"100%", overflowX:"hidden" }}>
-
-      {/* MODE TABS */}
-      <div style={{ display:"flex", gap:5, marginBottom:16, overflowX:"auto", paddingBottom:4 }}>
-        {Object.entries(modeConf).map(([k,v])=>(
-          <button key={k} onClick={()=>{setMode(k);setResult(null);setInput("");setChat([]);setMatchPrediction(null);setSelMatch(null);}} style={{ flexShrink:0, padding:"8px 14px", borderRadius:10, border:`1px solid ${mode===k?v.color:T.border}`, background:mode===k?v.color+"18":"transparent", color:mode===k?v.color:T.muted, fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>{v.label}</button>
-        ))}
-      </div>
-
-      {/* ══ MODE : PRÉDIRE TOUS LES MATCHS ══ */}
-      {mode==="matches" && (
-        <div>
-          <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:14, padding:"12px 16px", marginBottom:16 }}>
-            <div style={{ fontSize:13, fontWeight:800, color:A.green }}>⚽ PRÉDICTIONS CDM 2026</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>Sélectionne un groupe puis un match — l'IA analyse tout 🤖</div>
-          </div>
-
-          {/* SÉLECTEUR GROUPE */}
-          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:14, WebkitOverflowScrolling:"touch" }}>
-            {ALL_GROUPS.map(g=>(
-              <button key={g.group} onClick={()=>{setSelMatchGroup(g.group);setSelMatch(null);setMatchPrediction(null);}} style={{
-                flexShrink:0, width:36, height:36, borderRadius:9,
-                border:`2px solid ${selMatchGroup===g.group?g.color:T.border}`,
-                background:selMatchGroup===g.group?g.color+"22":T.card,
-                color:selMatchGroup===g.group?g.color:T.muted,
-                fontWeight:900, fontSize:12, cursor:"pointer",
-                position:"relative",
-              }}>
-                {g.group}
-                {g.senegal&&<div style={{ position:"absolute", top:1, right:1, width:5, height:5, borderRadius:"50%", background:A.green }} />}
-              </button>
-            ))}
-          </div>
-
-          {/* MATCHS DU GROUPE */}
-          {groupData && (
-            <div>
-              <div style={{ fontSize:11, color:T.muted, letterSpacing:1.5, fontWeight:700, marginBottom:10 }}>GROUPE {selMatchGroup} · {groupData.matches.length} MATCHS · TAPE POUR PRÉDIRE</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
-                {groupData.matches.map((m,i)=>{
-                  const isSel = selMatch?.t1===m.t1&&selMatch?.t2===m.t2;
-                  return (
-                    <button key={i} onClick={()=>{setSelMatch(m);setMatchPrediction(null);}} style={{
-                      background:isSel?`linear-gradient(135deg,${A.green}14,${T.card})`:T.card,
-                      border:`1px solid ${isSel?A.green+"55":m.hot?A.gold+"44":T.border}`,
-                      borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left",
-                    }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:14, fontWeight:700, color:T.text }}>{m.t1}</span>
-                        <div style={{ padding:"4px 10px", borderRadius:8, background:isSel?A.green+"18":T.card2, fontWeight:900, fontSize:12, color:isSel?A.green:T.muted, fontFamily:"monospace" }}>VS</div>
-                        <span style={{ fontSize:14, fontWeight:700, color:T.text }}>{m.t2}</span>
-                      </div>
-                      <div style={{ fontSize:10, color:T.muted, marginTop:6 }}>📅 {m.date} · 🏟️ {m.venue}</div>
-                      {m.hot&&<div style={{ fontSize:10, color:A.gold, fontWeight:800, marginTop:4 }}>🔥 CHOC HISTORIQUE</div>}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* BOUTON PRÉDIRE */}
-              {selMatch && (
-                <button onClick={()=>predictMatch(selMatch.t1, selMatch.t2)} disabled={predLoading} style={{
-                  width:"100%", padding:"14px", marginBottom:16,
-                  background:predLoading?"#1A1A2E":`linear-gradient(135deg,${A.green},${A.blue})`,
-                  border:"none", borderRadius:14, color:predLoading?T.muted:"#fff",
-                  fontWeight:900, fontSize:14, cursor:predLoading?"not-allowed":"pointer",
-                }}>
-                  {predLoading ? "🤖 GPT-LIONS analyse..." : `🔮 Prédire ${selMatch.t1.split(" ").slice(1).join(" ")} vs ${selMatch.t2.split(" ").slice(1).join(" ")}`}
-                </button>
-              )}
-
-              {/* RÉSULTAT PRÉDICTION */}
-              {predLoading && (
-                <div style={{ textAlign:"center", padding:"24px 0" }}>
-                  <div style={{ fontSize:32, animation:"ping 1s ease-in-out infinite", display:"inline-block" }}>⚽</div>
-                  <div style={{ fontSize:12, color:T.muted, marginTop:10 }}>GPT-LIONS calcule les probabilités...</div>
-                </div>
-              )}
-
-              {matchPrediction && !predLoading && (
-                <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}44`, borderRadius:18, padding:20, animation:"fadeIn 0.4s ease" }}>
-                  <div style={{ fontSize:10, fontWeight:900, letterSpacing:2, color:A.green, marginBottom:16 }}>🤖 PRÉDICTION GPT-LIONS</div>
-
-                  {/* SCORE PRÉDIT */}
-                  <div style={{ textAlign:"center", marginBottom:20 }}>
-                    <div style={{ display:"flex", justifyContent:"space-around", alignItems:"center", marginBottom:12 }}>
-                      <div style={{ textAlign:"center" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{matchPrediction.team1}</div>
-                      </div>
-                      <div style={{ padding:"10px 20px", borderRadius:14, background:A.gold+"18", border:`1px solid ${A.gold}44` }}>
-                        <div style={{ fontSize:28, fontWeight:900, fontFamily:"monospace", color:A.gold }}>{matchPrediction.score_predit}</div>
-                        <div style={{ fontSize:10, color:A.gold, fontWeight:700, textAlign:"center" }}>SCORE PRÉDIT</div>
-                      </div>
-                      <div style={{ textAlign:"center" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{matchPrediction.team2}</div>
-                      </div>
-                    </div>
-                    <div style={{ fontSize:14, fontWeight:800, color:A.green }}>
-                      🏆 {matchPrediction.winner === "Nul" ? "Match Nul prédit" : `Victoire : ${matchPrediction.winner}`}
-                    </div>
-                  </div>
-
-                  {/* PROBABILITÉS */}
-                  <div style={{ marginBottom:16 }}>
-                    <div style={{ fontSize:10, color:T.muted, fontWeight:700, letterSpacing:1.5, marginBottom:10 }}>PROBABILITÉS</div>
-                    {[
-                      { label:matchPrediction.team1, p:matchPrediction.proba_team1, c:A.green },
-                      { label:"Nul",                 p:matchPrediction.proba_nul,   c:A.gold },
-                      { label:matchPrediction.team2, p:matchPrediction.proba_team2, c:A.blue },
-                    ].map((x,i)=>(
-                      <div key={i} style={{ marginBottom:8 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                          <span style={{ fontSize:12, color:T.text }}>{x.label}</span>
-                          <span style={{ fontSize:14, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.p}%</span>
-                        </div>
-                        <Bar value={x.p} max={100} color={x.c} T={T} h={6} />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ANALYSE */}
-                  <div style={{ background:T.card2, borderRadius:12, padding:14, marginBottom:12 }}>
-                    <div style={{ fontSize:10, color:A.blue, fontWeight:800, letterSpacing:1, marginBottom:6 }}>📊 ANALYSE</div>
-                    <div style={{ fontSize:13, color:T.text, lineHeight:1.7 }}>{matchPrediction.analyse}</div>
-                  </div>
-
-                  {/* FACTEUR CLÉ + JOUEUR */}
-                  <div style={{ display:"flex", gap:8 }}>
-                    <div style={{ flex:1, background:A.gold+"0A", border:`1px solid ${A.gold}22`, borderRadius:10, padding:"10px 12px" }}>
-                      <div style={{ fontSize:9, color:A.gold, fontWeight:800, marginBottom:4 }}>⚡ FACTEUR CLÉ</div>
-                      <div style={{ fontSize:12, color:T.text }}>{matchPrediction.facteur_cle}</div>
-                    </div>
-                    <div style={{ flex:1, background:A.purple+"0A", border:`1px solid ${A.purple}22`, borderRadius:10, padding:"10px 12px" }}>
-                      <div style={{ fontSize:9, color:A.purple, fontWeight:800, marginBottom:4 }}>⭐ À SURVEILLER</div>
-                      <div style={{ fontSize:12, color:T.text }}>{matchPrediction.joueur_a_surveiller}</div>
-                    </div>
-                  </div>
-
-                  <button onClick={()=>predictMatch(selMatch.t1, selMatch.t2)} style={{ width:"100%", marginTop:12, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:10, padding:"8px", fontSize:11, cursor:"pointer" }}>🔄 Nouvelle prédiction</button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══ MODE : SÉNÉGAL ══ */}
-      {mode==="predict" && (
-        <div>
-          <LiveScoreWidget T={T} />
-          <div style={{ background:T.bg==="#05050A"?"linear-gradient(135deg,#040c14,#090f1a)":T.card, border:`1px solid ${A.gold}33`, borderRadius:18, padding:20, marginBottom:14 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-              <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.blue},${A.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🤖</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text }}>GPT-LIONS · Powered by Claude</div>
-                <div style={{ fontSize:10, color:T.muted }}>Analyses Sénégal CDM 2026</div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.green} size={8}/><span style={{ fontSize:10, color:A.green, fontWeight:700 }}>EN LIGNE</span></div>
-            </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {[
-                { label:"🦁 Sénégal vs France · Prédiction complète", prompt:"Analyse en détail le match Sénégal vs France du 16 juin 2026. Probabilités, scénario, facteurs clés, joueurs décisifs." },
-                { label:"📊 Parcours Sénégal · Groupe D complet", prompt:"Prédit le parcours complet du Sénégal dans le Groupe D : résultats vs France, Norvège, Irak. Qui se qualifie ?" },
-                { label:"🏆 Jusqu'où ira le Sénégal ?", prompt:"Analyse les chances du Sénégal d'aller en finale de la CDM 2026. Quels adversaires possibles ? Peut-on gagner le titre ?" },
-              ].map((btn,i)=>(
-                <button key={i} onClick={()=>run(btn.prompt)} disabled={loading} style={{ padding:"12px 14px", background:T.card2, border:`1px solid ${T.border}`, borderRadius:12, color:T.text, fontSize:12, fontWeight:600, cursor:"pointer", textAlign:"left" }}>
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-            {loading && <div style={{ textAlign:"center", padding:"20px 0" }}><div style={{ fontSize:28, animation:"ping 1s ease-in-out infinite", display:"inline-block" }}>⚽</div><div style={{ fontSize:12, color:T.muted, marginTop:8 }}>GPT-LIONS analyse...</div></div>}
-            {result && !loading && (
-              <div style={{ background:T.card2, border:`1px solid ${A.gold}33`, borderRadius:12, padding:14, marginTop:14, animation:"fadeIn 0.4s ease" }}>
-                <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:8 }}>🤖 ANALYSE GPT-LIONS</div>
-                <div style={{ fontSize:13, color:T.text, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{result}</div>
-                <button onClick={()=>setResult(null)} style={{ marginTop:10, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>✕ Fermer</button>
-              </div>
-            )}
-          </div>
-          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:18 }}>
-            <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:14 }}>📊 MODÈLE IA · SÉNÉGAL VS FRANCE</div>
-            {[{l:"🦁 Victoire Sénégal",p:63,c:A.green},{l:"🤝 Match nul",p:18,c:A.gold},{l:"🇫🇷 Victoire France",p:19,c:A.red}].map((x,i)=>(
-              <div key={i} style={{ marginBottom:13 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}><span style={{ fontSize:13, color:T.text }}>{x.l}</span><span style={{ fontSize:18, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.p}%</span></div>
-                <Bar value={x.p} max={100} color={x.c} T={T} h={7} />
-              </div>
-            ))}
-            <div style={{ fontSize:11, color:T.muted, fontStyle:"italic", marginTop:4 }}>47 variables · xG · Forme · Météo NY · Historique</div>
-          </div>
-        </div>
-      )}
-
-      {/* ══ MODE : COMMENTAIRE LIVE ══ */}
-      {mode==="live" && (
-        <div>
-          <div style={{ background:T.bg==="#05050A"?"linear-gradient(135deg,#1a0004,#090f1a)":T.card, border:`1px solid ${A.red}33`, borderRadius:18, padding:20, marginBottom:14 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-              <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.red},${A.orange})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🎙️</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text }}>COMMENTAIRE RADIO LIVE</div>
-                <div style={{ fontSize:10, color:T.muted }}>Décris la situation — GPT-LIONS commente !</div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.red} size={8}/><span style={{ fontSize:10, color:A.red, fontWeight:700 }}>LIVE</span></div>
-            </div>
-            {chat.length>0 && (
-              <div style={{ maxHeight:240, overflowY:"auto", marginBottom:12, display:"flex", flexDirection:"column", gap:8 }}>
-                {chat.map((msg,i)=>(
-                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:msg.role==="user"?A.blue+"14":T.card2, fontSize:12, color:T.text, lineHeight:1.6 }}>
-                    <span style={{ fontSize:9, fontWeight:800, color:msg.role==="user"?A.blue:A.gold, display:"block", marginBottom:3 }}>{msg.role==="user"?"🎙️ "+(user?.name||"Toi"):"🤖 GPT-LIONS"}</span>
-                    {msg.content}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ display:"flex", gap:8 }}>
-              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&run(input)} placeholder="Ex: Mané dribble 2 défenseurs, 87e minute, 0-0..." style={{ flex:1, background:T.input, border:`1px solid ${T.inputBorder}`, color:T.text, borderRadius:10, padding:"10px 14px", fontSize:12, outline:"none" }} />
-              <button onClick={()=>run(input)} disabled={loading||!input.trim()} style={{ background:`linear-gradient(135deg,${A.red},${A.orange})`, border:"none", color:"#fff", borderRadius:10, padding:"10px 14px", cursor:loading?"not-allowed":"pointer", fontWeight:800, fontSize:14, opacity:loading||!input.trim()?0.5:1 }}>🎙️</button>
-            </div>
-            {chat.length>0 && <button onClick={()=>setChat([])} style={{ width:"100%", marginTop:8, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px", fontSize:11, cursor:"pointer" }}>🗑️ Effacer le fil</button>}
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-/* ══ MAIN APP ══ */
-/* ══ SVG ICONS NAV ══ */
-const NAV_ICONS = {
-  matchs: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={active?2.2:1.8}/>
-      <path d="M12 2 C8 6 8 18 12 22" stroke={color} strokeWidth={active?2:1.6}/>
-      <path d="M12 2 C16 6 16 18 12 22" stroke={color} strokeWidth={active?2:1.6}/>
-      <path d="M2 12 L22 12" stroke={color} strokeWidth={active?2:1.6}/>
-      <path d="M3.5 7 L20.5 7" stroke={color} strokeWidth={active?1.8:1.4}/>
-      <path d="M3.5 17 L20.5 17" stroke={color} strokeWidth={active?1.8:1.4}/>
-    </svg>
-  ),
-  histoire: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2 L15 9 L22 9 L16.5 14 L18.5 21 L12 17 L5.5 21 L7.5 14 L2 9 L9 9 Z" stroke={color} strokeWidth={active?2:1.7} strokeLinejoin="round" fill={active?color+"33":"none"}/>
-    </svg>
-  ),
-  legendes: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M6 4 L6 14 C6 18 18 18 18 14 L18 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
-      <path d="M4 4 L20 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
-      <path d="M9 20 L15 20" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/>
-      <path d="M12 18 L12 20" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
-    </svg>
-  ),
-  pronos: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={active?2.2:1.8}/>
-      <circle cx="12" cy="12" r="4" stroke={color} strokeWidth={active?2:1.6}/>
-      <circle cx="12" cy="12" r="1.5" fill={color}/>
-      <line x1="12" y1="3" x2="12" y2="6" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
-      <line x1="12" y1="18" x2="12" y2="21" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
-      <line x1="3" y1="12" x2="6" y2="12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
-      <line x1="18" y1="12" x2="21" y2="12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
-    </svg>
-  ),
-  ia: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="6" width="18" height="13" rx="3" stroke={color} strokeWidth={active?2.2:1.8}/>
-      <circle cx="8" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/>
-      <circle cx="16" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/>
-      <path d="M10 12 L14 12" stroke={color} strokeWidth={active?2:1.6} strokeLinecap="round"/>
-      <path d="M8 6 L8 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
-      <path d="M16 6 L16 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/>
-      <path d="M12 6 L12 4" stroke={color} strokeWidth={active?1.8:1.6} strokeLinecap="round"/>
-    </svg>
-  ),
-  forum: (active, color) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M21 15 C21 16.1 20.1 17 19 17 L7 17 L3 21 L3 5 C3 3.9 3.9 3 5 3 L19 3 C20.1 3 21 3.9 21 5 Z" stroke={color} strokeWidth={active?2.2:1.8} strokeLinejoin="round" fill={active?color+"18":"none"}/>
-      <line x1="7" y1="8" x2="17" y2="8" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/>
-      <line x1="7" y1="12" x2="14" y2="12" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/>
-    </svg>
-  ),
-};
-
-const TABS=[["matchs","Matchs"],["histoire","Histoire"],["legendes","Légendes"],["pronos","Pronos"],["ia","IA"],["forum","Forum"]];
-
-export default function App() {
-  const [user, setUser] = useState(() => {
-    try { const s = localStorage.getItem("lions_user"); return s ? JSON.parse(s) : null; } catch { return null; }
-  });
-  const [isDark, setIsDark] = useState(true);
-  const [tab, setTab] = useState(0);
-  const [installable, setInstallable] = useState(false);
-  const [installed, setInstalled] = useState(false);
-  const [notifGranted, setNotifGranted] = useState(false);
-  const [navShrunk, setNavShrunk] = useState(false);
-  const lastScrollY = useRef(0);
-  const bodyRef = useRef(null);
-
-  useEffect(() => {
-    const styleEl = document.createElement("style");
-    styleEl.textContent = [
-      "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,900&display=swap');",
-      "@keyframes ping { 75%, 100% { transform:scale(2.3); opacity:0; } }",
-      "@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }",
-      "@keyframes fadeOut { to { opacity:0; transform:scale(1.05); } }",
-      "@keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }",
-      "@keyframes particleFloat { from { transform:translateY(0); opacity:0.15; } to { transform:translateY(-20px); opacity:0.35; } }",
-      "* { box-sizing:border-box; margin:0; padding:0; }",
-      "::-webkit-scrollbar { width:2px; } ::-webkit-scrollbar-thumb { background:#333344; border-radius:2px; }",
-      "select option { background:#111120; }",
-      "input::placeholder { color:#5a5a7a; }"
-    ].join(" ");
-    document.head.appendChild(styleEl);
-    return () => document.head.removeChild(styleEl);
-  }, []);
-
-  useEffect(() => {
-    const onInstallable = () => setInstallable(true);
-    window.addEventListener('pwaInstallable', onInstallable);
-    if (window.matchMedia('(display-mode: standalone)').matches) setInstalled(true);
-    if ('Notification' in window) setNotifGranted(Notification.permission === 'granted');
-    return () => window.removeEventListener('pwaInstallable', onInstallable);
-  }, []);
-
-  const handleInstall = async () => {
-    if (window.__installPWA) {
-      const ok = await window.__installPWA();
-      if (ok) { setInstalled(true); setInstallable(false); }
-    }
-  };
-
-  const handleNotif = async () => {
-    if ('Notification' in window) {
-      const perm = await Notification.requestPermission();
-      setNotifGranted(perm === 'granted');
-      if (perm === 'granted') {
-        new Notification('Lions Arena - Activé !', {
-          body: 'Tu recevras les alertes matchs en temps réel.',
-          icon: '/icons/icon-192.png'
-        });
-      }
-    }
-  };
-
-  const T = THEMES[isDark?"dark":"light"];
-  const tabSwipe = useSwipe(
-    () => { if (tab > 0) changeTab(tab - 1); },
-    () => { if (tab < TABS.length - 1) changeTab(tab + 1); }
-  );
-
-  const handleDone = (u) => {
-    setUser(u);
-    localStorage.setItem("lions_user", JSON.stringify(u));
-  };
-  const changeTab = i => { setTab(i); if(bodyRef.current) bodyRef.current.scrollTop=0; setNavShrunk(false); };
-
-  useEffect(() => {
-    const el = bodyRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const curr = el.scrollTop;
-      if (curr > lastScrollY.current + 8) setNavShrunk(true);
-      else if (curr < lastScrollY.current - 8) setNavShrunk(false);
-      lastScrollY.current = curr;
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  if(!user) return <Splash onDone={handleDone} />;
-
-  return (
-    <div style={{ background:T.bg, height:"100%", minHeight:"100dvh", color:T.text, fontFamily:"sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", transition:"background 0.3s,color 0.3s", position:"fixed", top:0, left:0, right:0, bottom:0, paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)" }}>
-      {/* HEADER */}
-      <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", position:"sticky", top:0, zIndex:300, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-          <div style={{ width:34, height:34, borderRadius:10, background:`linear-gradient(135deg,${A.green},${A.gold})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, boxShadow:`0 0 18px ${A.gold}44` }}>🦁</div>
-          <div>
-            <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5, lineHeight:1 }}>LIONS <span style={{ color:A.gold }}>ARENA</span></div>
-            <div style={{ fontSize:10, color:T.muted, letterSpacing:2 }}>THE LIVING HISTORY · 2026</div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:7, alignItems:"center" }}>
-          <div style={{ background:A.red+"18", border:`1px solid ${A.red}44`, borderRadius:7, padding:"4px 8px", display:"flex", alignItems:"center", gap:5 }}>
-            <Dot/><span style={{ fontSize:11, color:A.red, fontWeight:700 }}>LIVE</span>
-          </div>
-          <button onClick={()=>setIsDark(!isDark)} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:8, padding:"5px 10px", cursor:"pointer", fontSize:15, transition:"all 0.2s" }}>
-            {isDark?"☀️":"🌙"}
-          </button>
-        </div>
-      </div>
-
-      {/* PWA INSTALL BANNER */}
-      {(installable || !notifGranted) && !installed && (
-        <div style={{ background:`linear-gradient(135deg,${A.green}18,${A.gold}0A)`, borderBottom:`1px solid ${A.gold}33`, padding:"10px 18px", display:"flex", gap:10, alignItems:"center" }}>
-          <span style={{ fontSize:20 }}>📲</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:12, fontWeight:800, color:A.gold }}>Installe Lions Arena</div>
-            <div style={{ fontSize:11, color:T.muted }}>Accès direct depuis ton écran d'accueil</div>
-          </div>
-          <div style={{ display:"flex", gap:6 }}>
-            {installable && <button onClick={handleInstall} style={{ background:A.gold, border:"none", color:"#000", borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>Installer</button>}
-            {!notifGranted && <button onClick={handleNotif} style={{ background:A.green+"22", border:`1px solid ${A.green}44`, color:A.green, borderRadius:8, padding:"6px 12px", fontSize:11, fontWeight:800, cursor:"pointer" }}>🔔</button>}
-          </div>
-        </div>
-      )}
-
-      {/* BODY */}
-      <div ref={bodyRef} {...tabSwipe} style={{ flex:1, overflowY:"scroll", overflowX:"hidden", minHeight:0, padding:"16px 14px 100px", WebkitOverflowScrolling:"touch" }}>
-        <Countdown T={T} />
-        {tab===0 && <MatchesTab T={T} user={user} />}
-        {tab===1 && <HistoryTab T={T} />}
-        {tab===2 && <LegendsTab T={T} />}
-        {tab===3 && <PronosticsTab T={T} user={user} />}
-        {tab===4 && <AITab T={T} user={user} />}
-        {tab===5 && <CommunityTab T={T} user={user} />}
-      </div>
-
-      {/* BOTTOM NAV — rétrécit comme Instagram au scroll */}
-      <div style={{
-        position:"fixed", bottom:0, left:0, right:0, zIndex:500,
-        display:"flex", justifyContent:"center",
-        padding:`0 0 calc(env(safe-area-inset-bottom, 10px) + 6px)`,
-        background:"transparent", pointerEvents:"none",
-        transition:"all 0.3s ease",
-      }}>
-        <div style={{
-          display:"flex", alignItems:"center",
-          background: navShrunk ? T.header+"EE" : T.header,
-          backdropFilter:"blur(24px)",
-          borderTop: navShrunk ? "none" : `1px solid ${T.border}`,
-          borderRadius: navShrunk ? 40 : 0,
-          padding: navShrunk ? "6px 10px" : `8px 0`,
-          gap: navShrunk ? 4 : 0,
-          width: navShrunk ? "auto" : "100%",
-          boxShadow: navShrunk ? "0 4px 30px rgba(0,0,0,0.5)" : "none",
-          transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)",
-          pointerEvents:"all",
-        }}>
-          {TABS.map(([key,lbl],i)=>{
-            const isActive = tab===i;
-            const iconColor = isActive ? A.gold : T.muted;
-            return (
-              <button key={i} onClick={()=>changeTab(i)} style={{
-                flex: navShrunk ? "none" : 1,
-                background: navShrunk && isActive ? A.gold+"22" : "transparent",
-                border:"none", cursor:"pointer",
-                display:"flex", flexDirection:"column", alignItems:"center",
-                gap: navShrunk ? 0 : 3,
-                padding: navShrunk ? "8px 14px" : "6px 0 2px",
-                borderRadius: navShrunk ? 30 : 0,
-                transition:"all 0.3s ease",
-                minWidth: navShrunk ? 44 : "auto",
-              }}>
-                <div style={{ opacity: isActive ? 1 : 0.55, transition:"opacity 0.2s, transform 0.2s", transform: isActive ? "scale(1.08)" : "scale(1)" }}>
-                  {NAV_ICONS[key]?.(isActive, iconColor)}
-                </div>
-                {!navShrunk && <span style={{ fontSize:9, color:iconColor, fontWeight:900, letterSpacing:0.8, transition:"color 0.2s" }}>{lbl.toUpperCase()}</span>}
-                {!navShrunk && isActive && <div style={{ width:16, height:2, borderRadius:1, background:A.gold, marginTop:1 }} />}
-                {navShrunk && isActive && <div style={{ width:4, height:4, borderRadius:"50%", background:A.gold, marginTop:2 }} />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
