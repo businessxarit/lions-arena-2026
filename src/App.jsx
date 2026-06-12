@@ -116,13 +116,13 @@ const ALL_GROUPS = [
     { t1:"🇵🇪 Pérou",      t2:"🇨🇱 Chili",        date:"22 Juin", time:"20h00", venue:"Estadio Azteca",      city:"Mexico City" },
     { t1:"🇦🇷 Argentine",  t2:"🇪🇨 Équateur",     date:"22 Juin", time:"20h00", venue:"Mercedes-Benz",       city:"Atlanta" },
   ]},
-  { group:"C", color:"#8b5cf6", teams:["🇩🇪 Allemagne","🇯🇵 Japon","🇲🇽 Mexique","🇿🇦 Afr. du Sud"], matches:[
-    { t1:"🇩🇪 Allemagne",  t2:"🇿🇦 Afr. du Sud",  date:"11 Juin", time:"16h00", venue:"Gillette Stadium",    city:"Boston" },
-    { t1:"🇲🇽 Mexique",    t2:"🇯🇵 Japon",        date:"11 Juin", time:"22h00", venue:"Estadio Azteca",      city:"Mexico City" },
-    { t1:"🇿🇦 Afr. du Sud",t2:"🇲🇽 Mexique",      date:"15 Juin", time:"16h00", venue:"Estadio BBVA",        city:"Monterrey" },
-    { t1:"🇩🇪 Allemagne",  t2:"🇯🇵 Japon",        date:"15 Juin", time:"22h00", venue:"SoFi Stadium",        city:"Los Angeles" },
-    { t1:"🇿🇦 Afr. du Sud",t2:"🇯🇵 Japon",        date:"20 Juin", time:"20h00", venue:"Lumen Field",         city:"Seattle" },
-    { t1:"🇲🇽 Mexique",    t2:"🇩🇪 Allemagne",    date:"20 Juin", time:"20h00", venue:"AT&T Stadium",        city:"Dallas" },
+  { group:"A", color:"#06b6d4", teams:["🇲🇽 Mexique","🇿🇦 Afr. du Sud","🇰🇷 Corée du Sud","🇨🇿 Rép. Tchèque"], matches:[
+    { t1:"🇲🇽 Mexique",     t2:"🇿🇦 Afr. du Sud",   date:"11 Juin", time:"21h00", venue:"Estadio Azteca",      city:"Mexico City",  hot:true },
+    { t1:"🇰🇷 Corée du Sud", t2:"🇨🇿 Rép. Tchèque",  date:"12 Juin", time:"04h00", venue:"BMO Field",           city:"Toronto" },
+    { t1:"🇲🇽 Mexique",     t2:"🇨🇿 Rép. Tchèque",  date:"17 Juin", time:"21h00", venue:"Estadio BBVA",        city:"Monterrey" },
+    { t1:"🇿🇦 Afr. du Sud", t2:"🇰🇷 Corée du Sud",  date:"17 Juin", time:"18h00", venue:"Estadio Akron",       city:"Guadalajara" },
+    { t1:"🇲🇽 Mexique",     t2:"🇰🇷 Corée du Sud",  date:"22 Juin", time:"20h00", venue:"Estadio Azteca",      city:"Mexico City" },
+    { t1:"🇿🇦 Afr. du Sud", t2:"🇨🇿 Rép. Tchèque",  date:"22 Juin", time:"20h00", venue:"AT&T Stadium",        city:"Dallas" },
   ]},
   { group:"D", color:"#00C853", senegal:true, teams:["🇸🇳 Sénégal","🇫🇷 France","🇳🇴 Norvège","🇮🇶 Irak"], matches:[
     { t1:"🇸🇳 Sénégal",   t2:"🇫🇷 France",      date:"16 Juin", time:"21h00", venue:"MetLife Stadium",     city:"New York",      hot:true },
@@ -342,6 +342,110 @@ const SENEGAL_HEROES = [
   { name:"Kalidou Koulibaly",pos:"Défenseur central",club:"Napoli → Chelsea",years:"2018–2022",goals:2, emoji:"🛡️", quote:"Capitaine 2022. But qualificatif vs Équateur. Mur absolu.", stats:["Duels gagnés : 74% en 2022","Meilleur défenseur africain 2021","Pilier 8 ans en sélection"] },
   { name:"Aliou Cissé",      pos:"Milieu → Coach",  club:"Birmingham → Sélectionneur",years:"2002+",goals:0, emoji:"👑", quote:"Capitaine 2002. Coach CAN 2021. L'âme des Lions depuis 24 ans.", stats:["Capitaine du choc France 2002","CAN 2021 : 1er titre sénégalais","Coach Mondial 2026"] },
 ];
+
+
+/* ══ COMPOSITIONS D'ÉQUIPES CDM 2026 ══ */
+const SQUADS = {
+  "🇸🇳 Sénégal": {
+    formation: "4-3-3",
+    coach: "Aliou Cissé",
+    titulaires: [
+      { num:16, name:"E. Mendy",     pos:"GB",  club:"Al-Ahli" },
+      { num:2,  name:"M. Sabaly",    pos:"DD",  club:"Real Betis" },
+      { num:3,  name:"K. Koulibaly", pos:"DC",  club:"Al-Hilal" },
+      { num:4,  name:"A. Diallo",    pos:"DC",  club:"PSG" },
+      { num:23, name:"N. Mendy",     pos:"DG",  club:"Chelsea" },
+      { num:8,  name:"I. Gueye",     pos:"MDC", club:"Everton" },
+      { num:6,  name:"C. Kouyaté",   pos:"MC",  club:"Nottingham" },
+      { num:10, name:"P. Gueye",     pos:"MC",  club:"Juventus" },
+      { num:11, name:"I. Sarr",      pos:"AG",  club:"Crystal Palace" },
+      { num:9,  name:"B. Dia",       pos:"AT",  club:"Lazio" },
+      { num:10, name:"S. Mané",      pos:"AD",  club:"Al-Nassr" },
+    ],
+    remplacants: [
+      { num:1,  name:"S. Gomis",     pos:"GB",  club:"Al-Hilal" },
+      { num:5,  name:"P. Badji",     pos:"DC",  club:"Metz" },
+      { num:7,  name:"M. Ndiaye",    pos:"MC",  club:"Villarreal" },
+      { num:14, name:"L. Ndiaye",    pos:"AT",  club:"Fulham" },
+      { num:19, name:"N. Jackson",   pos:"AT",  club:"Chelsea" },
+    ]
+  },
+  "🇫🇷 France": {
+    formation: "4-2-3-1",
+    coach: "Didier Deschamps",
+    titulaires: [
+      { num:1,  name:"M. Maignan",   pos:"GB",  club:"AC Milan" },
+      { num:5,  name:"J. Konaté",    pos:"DC",  club:"Liverpool" },
+      { num:4,  name:"D. Upamecano", pos:"DC",  club:"Bayern" },
+      { num:22, name:"T. Hernandez", pos:"DG",  club:"AC Milan" },
+      { num:2,  name:"B. Pavard",    pos:"DD",  club:"Inter Milan" },
+      { num:8,  name:"A. Tchouaméni",pos:"MDC", club:"Real Madrid" },
+      { num:13, name:"N. Kanté",     pos:"MDC", club:"Al-Ittihad" },
+      { num:7,  name:"A. Griezmann", pos:"MOC", club:"Atlético" },
+      { num:11, name:"O. Dembélé",   pos:"AD",  club:"PSG" },
+      { num:14, name:"A. Rabiot",    pos:"AG",  club:"Juventus" },
+      { num:10, name:"K. Mbappé",    pos:"AT",  club:"Real Madrid" },
+    ],
+    remplacants: [
+      { num:16, name:"A. Areola",    pos:"GB",  club:"West Ham" },
+      { num:17, name:"W. Fofana",    pos:"DC",  club:"Chelsea" },
+      { num:9,  name:"O. Giroud",    pos:"AT",  club:"LA Galaxy" },
+      { num:20, name:"M. Camavinga", pos:"MC",  club:"Real Madrid" },
+      { num:15, name:"M. Zaire-Emery",pos:"MC", club:"PSG" },
+    ]
+  },
+  "🇳🇴 Norvège": {
+    formation: "4-3-3",
+    coach: "Ståle Solbakken",
+    titulaires: [
+      { num:1,  name:"Ø. Nyland",    pos:"GB",  club:"Atalanta" },
+      { num:6,  name:"A. Strand",    pos:"DC",  club:"Stuttgart" },
+      { num:5,  name:"L. Østigård",  pos:"DC",  club:"Napoli" },
+      { num:3,  name:"A. Nymo",      pos:"DG",  club:"Brest" },
+      { num:2,  name:"K. Pedersen",  pos:"DD",  club:"Augsburg" },
+      { num:8,  name:"S. Berge",     pos:"MC",  club:"Burnley" },
+      { num:14, name:"M. Ødegaard",  pos:"MC",  club:"Arsenal" },
+      { num:7,  name:"A. Sørloth",   pos:"AG",  club:"Atlético" },
+      { num:23, name:"J. Thorstvedt",pos:"MOC", club:"Spurs" },
+      { num:11, name:"A. Larsen",    pos:"AD",  club:"Marseille" },
+      { num:9,  name:"E. Haaland",   pos:"AT",  club:"Man City" },
+    ],
+    remplacants: [
+      { num:12, name:"R. Jarstein",  pos:"GB",  club:"Hertha" },
+      { num:4,  name:"S. Ajer",      pos:"DC",  club:"Brentford" },
+      { num:10, name:"O. Bobb",      pos:"MC",  club:"Man City" },
+      { num:15, name:"P. Piroe",     pos:"AT",  club:"Leeds" },
+    ]
+  },
+  "🇮🇶 Irak": {
+    formation: "4-4-2",
+    coach: "Jesús Casas",
+    titulaires: [
+      { num:1,  name:"J. Hameed",    pos:"GB",  club:"Al-Zawraa" },
+      { num:5,  name:"A. Hussein",   pos:"DC",  club:"Al-Shorta" },
+      { num:4,  name:"M. Ali",       pos:"DC",  club:"Al-Quwa" },
+      { num:3,  name:"H. Karrar",    pos:"DG",  club:"Al-Zawraa" },
+      { num:2,  name:"A. Basim",     pos:"DD",  club:"Al-Quwa" },
+      { num:8,  name:"A. Taher",     pos:"MC",  club:"Al-Naft" },
+      { num:6,  name:"S. Ridha",     pos:"MC",  club:"Al-Shorta" },
+      { num:11, name:"M. Dawood",    pos:"MG",  club:"Erbil" },
+      { num:7,  name:"A. Majeed",    pos:"MD",  club:"Al-Zawraa" },
+      { num:10, name:"A. Al-Hamdawi",pos:"AT",  club:"PAOK" },
+      { num:9,  name:"A. Karimi",    pos:"AT",  club:"Al-Quwa" },
+    ],
+    remplacants: [
+      { num:16, name:"H. Mohammed",  pos:"GB",  club:"Al-Naft" },
+      { num:14, name:"B. Nouri",     pos:"MC",  club:"Al-Talaba" },
+      { num:20, name:"M. Jabbar",    pos:"AT",  club:"Al-Shorta" },
+    ]
+  },
+};
+
+const POS_COLORS = {
+  "GB":"#3B82F6", "DC":"#10B981", "DD":"#10B981", "DG":"#10B981",
+  "MDC":"#F59E0B", "MC":"#F59E0B", "MOC":"#F59E0B", "MG":"#F59E0B", "MD":"#F59E0B",
+  "AT":"#EF4444", "AG":"#EF4444", "AD":"#EF4444",
+};
 
 const PRONOSTICS_MATCHES = [
   { id:"p1", t1:"🇸🇳 Sénégal", t2:"🇫🇷 France",    date:"16 Juin", pts:30, locked:false },
@@ -991,9 +1095,398 @@ const CDM_FORMAT_2026 = {
   novelty: "1er Mondial à 48 équipes · 3 pays organisateurs · 104 matchs au total",
 };
 
+/* ══ SQUAD CARD ══ */
+function PlayerDot({ p, color, size=44 }) {
+  const initials = p.name.split(" ").map(x=>x[0]).slice(0,2).join("");
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, minWidth:size+10 }}>
+      <div style={{ position:"relative" }}>
+        <div style={{ width:size, height:size, borderRadius:"50%", background:`linear-gradient(135deg,${color}CC,${color}66)`, border:`2px solid ${color}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:size>40?13:10, fontWeight:900, color:"#fff", boxShadow:`0 2px 8px ${color}44` }}>
+          {initials}
+        </div>
+        <div style={{ position:"absolute", bottom:-2, right:-2, width:18, height:18, borderRadius:"50%", background:"#0A0A14", border:`1px solid ${color}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:900, color:color }}>
+          {p.num}
+        </div>
+      </div>
+      <div style={{ fontSize:9, color:"#fff", fontWeight:700, textAlign:"center", maxWidth:54, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textShadow:"0 1px 3px #000" }}>
+        {p.name.split(" ").pop()}
+      </div>
+    </div>
+  );
+}
+
+function SquadCard({ T, teamName, onClose }) {
+  const squad = SQUADS[teamName];
+  const [tab, setTab] = useState("terrain");
+  if (!squad) return null;
+
+  const gk = squad.titulaires.filter(p => p.pos === "GB");
+  const def = squad.titulaires.filter(p => ["DC","DD","DG"].includes(p.pos));
+  const mid = squad.titulaires.filter(p => ["MDC","MC","MOC","MG","MD"].includes(p.pos));
+  const att = squad.titulaires.filter(p => ["AT","AG","AD"].includes(p.pos));
+
+  const lines = [att, mid, def, gk];
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.85)", zIndex:1000, display:"flex", flexDirection:"column" }} onClick={onClose}>
+      <div style={{ background:"#0A0A14", flex:1, display:"flex", flexDirection:"column", marginTop:60, borderRadius:"20px 20px 0 0", overflow:"hidden" }} onClick={e=>e.stopPropagation()}>
+
+        {/* HEADER */}
+        <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid #1A1A2E", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{teamName}</div>
+            <div style={{ fontSize:11, color:"#666", marginTop:1 }}>{squad.formation} · {squad.coach}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"#1A1A2E", border:"none", color:"#888", borderRadius:"50%", width:30, height:30, fontSize:15, cursor:"pointer" }}>✕</button>
+        </div>
+
+        {/* TABS */}
+        <div style={{ display:"flex", borderBottom:"1px solid #1A1A2E", flexShrink:0 }}>
+          {[["terrain","⚽ Terrain"],["liste","📋 Liste"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setTab(v)} style={{ flex:1, padding:"10px", background:"transparent", border:"none", borderBottom:`2px solid ${tab===v?"#00C853":"transparent"}`, color:tab===v?"#00C853":"#666", fontSize:12, fontWeight:800, cursor:"pointer" }}>{l}</button>
+          ))}
+        </div>
+
+        {/* TERRAIN */}
+        {tab==="terrain" && (
+          <div style={{ flex:1, overflowY:"auto" }}>
+            <div style={{ background:"linear-gradient(180deg,#0A3D1F,#0D6B35,#0A3D1F)", minHeight:420, padding:"20px 8px", display:"flex", flexDirection:"column", justifyContent:"space-around", position:"relative" }}>
+              {/* Lignes terrain déco */}
+              <div style={{ position:"absolute", top:"50%", left:"8%", right:"8%", height:1, background:"rgba(255,255,255,0.12)" }} />
+              <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:90, height:90, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.12)" }} />
+              <div style={{ position:"absolute", top:10, left:"25%", right:"25%", height:60, border:"1px solid rgba(255,255,255,0.1)", borderBottom:"none" }} />
+              <div style={{ position:"absolute", bottom:10, left:"25%", right:"25%", height:60, border:"1px solid rgba(255,255,255,0.1)", borderTop:"none" }} />
+
+              {/* JOUEURS */}
+              {lines.map((line, li) => (
+                <div key={li} style={{ display:"flex", justifyContent:"space-evenly", alignItems:"center", position:"relative", zIndex:1 }}>
+                  {line.map((p,i) => (
+                    <PlayerDot key={i} p={p} color={POS_COLORS[p.pos]||"#F5C518"} size={42} />
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* REMPLAÇANTS */}
+            {squad.remplacants?.length > 0 && (
+              <div style={{ padding:"12px 16px" }}>
+                <div style={{ fontSize:10, color:"#555", fontWeight:800, letterSpacing:2, marginBottom:8 }}>REMPLAÇANTS</div>
+                <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:8 }}>
+                  {squad.remplacants.map((p,i) => (
+                    <PlayerDot key={i} p={p} color="#444" size={36} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* LISTE */}
+        {tab==="liste" && (
+          <div style={{ flex:1, overflowY:"auto", padding:"12px 16px" }}>
+            {[["Gardien", gk],["Défenseurs", def],["Milieux", mid],["Attaquants", att]].map(([g, players])=>(
+              <div key={g} style={{ marginBottom:14 }}>
+                <div style={{ fontSize:10, color:"#555", fontWeight:800, letterSpacing:2, marginBottom:6 }}>{g.toUpperCase()}</div>
+                {players.map((p,i)=>(
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", background:"#111120", borderRadius:10, marginBottom:5, border:"1px solid #1A1A2E" }}>
+                    <div style={{ width:30, height:30, borderRadius:"50%", background:POS_COLORS[p.pos]||"#F5C518", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:"#fff", flexShrink:0 }}>{p.num}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:"#fff" }}>{p.name}</div>
+                      <div style={{ fontSize:10, color:"#555" }}>{p.club}</div>
+                    </div>
+                    <div style={{ fontSize:10, fontWeight:800, color:POS_COLORS[p.pos]||"#F5C518", background:(POS_COLORS[p.pos]||"#F5C518")+"22", padding:"3px 7px", borderRadius:6 }}>{p.pos}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {squad.remplacants?.length > 0 && (
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:10, color:"#555", fontWeight:800, letterSpacing:2, marginBottom:6 }}>REMPLAÇANTS</div>
+                {squad.remplacants.map((p,i)=>(
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px", background:"#0A0A14", borderRadius:10, marginBottom:4, border:"1px solid #111120" }}>
+                    <div style={{ width:26, height:26, borderRadius:"50%", background:"#222", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:"#555", flexShrink:0 }}>{p.num}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"#777" }}>{p.name}</div>
+                      <div style={{ fontSize:10, color:"#444" }}>{p.club}</div>
+                    </div>
+                    <div style={{ fontSize:10, color:"#444", padding:"2px 6px", borderRadius:6, border:"1px solid #222" }}>{p.pos}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* ══ MATCHS DU JOUR CDM 2026 ══ */
+const TODAY_MATCHES = [
+  // ══ 11 JUIN ══
+  { id:"m01", group:"A", journee:1, t1:"🇲🇽 Mexique", t1code:"MEX", t1flag:"🇲🇽", t2:"🇿🇦 Afr. du Sud", t2code:"RSA", t2flag:"🇿🇦", date:"11 Juin 2026", time:"21h00", venue:"Estadio Azteca", city:"Mexico City", tv:"RTS1 (Sén) · TF1", arbitre:"Wilton Sampaio (BRA)", status:"upcoming", score:null, cotes:{t1:1.52,nul:3.80,t2:5.50}, h2h:[{date:"2010",score:"1-1",comp:"CDM",winner:"draw"},{date:"2002",score:"2-2",comp:"CDM",winner:"draw"}], forme_t1:["G","G","P","G","N"], forme_t2:["P","G","N","G","G"] },
+
+  // ══ 12 JUIN ══
+  { id:"m02", group:"A", journee:1, t1:"🇰🇷 Corée du Sud", t1code:"KOR", t1flag:"🇰🇷", t2:"🇨🇿 Rép. Tchèque", t2code:"CZE", t2flag:"🇨🇿", date:"12 Juin 2026", time:"04h00", venue:"BMO Field", city:"Toronto", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.10,nul:3.40,t2:3.20}, h2h:[], forme_t1:["G","N","G","P","G"], forme_t2:["G","G","N","G","P"] },
+  { id:"m03", group:"B", journee:1, t1:"🇨🇦 Canada", t1code:"CAN", t1flag:"🇨🇦", t2:"🇧🇦 Bosnie", t2code:"BIH", t2flag:"🇧🇦", date:"12 Juin 2026", time:"21h00", venue:"BC Place", city:"Vancouver", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.85,nul:3.50,t2:4.00}, h2h:[], forme_t1:["G","G","G","N","P"], forme_t2:["N","G","P","G","G"] },
+
+  // ══ 13 JUIN ══
+  { id:"m04", group:"D", journee:1, t1:"🇺🇸 États-Unis", t1code:"USA", t1flag:"🇺🇸", t2:"🇵🇾 Paraguay", t2code:"PAR", t2flag:"🇵🇾", date:"13 Juin 2026", time:"03h00", venue:"MetLife Stadium", city:"New York", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.65,nul:3.60,t2:5.00}, h2h:[], forme_t1:["G","G","G","N","G"], forme_t2:["G","P","G","G","N"] },
+  { id:"m05", group:"B", journee:1, t1:"🇶🇦 Qatar", t1code:"QAT", t1flag:"🇶🇦", t2:"🇨🇭 Suisse", t2code:"SUI", t2flag:"🇨🇭", date:"13 Juin 2026", time:"21h00", venue:"Estadio Akron", city:"Guadalajara", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:4.50,nul:3.80,t2:1.70}, h2h:[], forme_t1:["P","G","N","P","G"], forme_t2:["G","G","G","N","G"] },
+
+  // ══ 14 JUIN ══
+  { id:"m06", group:"C", journee:1, t1:"🇧🇷 Brésil", t1code:"BRA", t1flag:"🇧🇷", t2:"🇲🇦 Maroc", t2code:"MAR", t2flag:"🇲🇦", date:"14 Juin 2026", time:"00h00", venue:"SoFi Stadium", city:"Los Angeles", tv:"RTS1 (Sén) · TF1", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.55,nul:3.70,t2:5.50}, h2h:[], forme_t1:["G","G","G","G","N"], forme_t2:["G","N","G","P","G"] },
+  { id:"m07", group:"C", journee:1, t1:"🇭🇹 Haïti", t1code:"HAI", t1flag:"🇭🇹", t2:"🏴󠁧󠁢󠁳󠁣󠁴󠁿 Écosse", t2code:"SCO", t2flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿", date:"14 Juin 2026", time:"03h00", venue:"Arrowhead Stadium", city:"Kansas City", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:5.00,nul:3.50,t2:1.60}, h2h:[], forme_t1:["P","G","N","P","G"], forme_t2:["G","G","N","G","G"] },
+  { id:"m08", group:"D", journee:1, t1:"🇦🇺 Australie", t1code:"AUS", t1flag:"🇦🇺", t2:"🇹🇷 Turquie", t2code:"TUR", t2flag:"🇹🇷", date:"14 Juin 2026", time:"06h00", venue:"Levi's Stadium", city:"San Francisco", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.80,nul:3.30,t2:2.50}, h2h:[], forme_t1:["G","N","G","P","G"], forme_t2:["G","G","G","N","G"] },
+  { id:"m09", group:"E", journee:1, t1:"🇩🇪 Allemagne", t1code:"GER", t1flag:"🇩🇪", t2:"🇨🇼 Curaçao", t2code:"CUW", t2flag:"🇨🇼", date:"14 Juin 2026", time:"19h00", venue:"AT&T Stadium", city:"Dallas", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.05,nul:10.0,t2:30.0}, h2h:[], forme_t1:["G","G","G","G","G"], forme_t2:["P","N","P","G","P"] },
+  { id:"m10", group:"F", journee:1, t1:"🇳🇱 Pays-Bas", t1code:"NED", t1flag:"🇳🇱", t2:"🇯🇵 Japon", t2code:"JPN", t2flag:"🇯🇵", date:"14 Juin 2026", time:"22h00", venue:"Gillette Stadium", city:"Boston", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.70,nul:3.60,t2:4.50}, h2h:[], forme_t1:["G","G","N","G","G"], forme_t2:["G","G","G","P","G"] },
+
+  // ══ 15 JUIN ══
+  { id:"m11", group:"E", journee:1, t1:"🇨🇮 Côte d'Ivoire", t1code:"CIV", t1flag:"🇨🇮", t2:"🇪🇨 Équateur", t2code:"ECU", t2flag:"🇪🇨", date:"15 Juin 2026", time:"01h00", venue:"Rose Bowl", city:"Los Angeles", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.20,nul:3.30,t2:3.10}, h2h:[], forme_t1:["G","N","G","G","P"], forme_t2:["G","G","N","G","G"] },
+  { id:"m12", group:"F", journee:1, t1:"🇸🇪 Suède", t1code:"SWE", t1flag:"🇸🇪", t2:"🇹🇳 Tunisie", t2code:"TUN", t2flag:"🇹🇳", date:"15 Juin 2026", time:"04h00", venue:"Lincoln Financial", city:"Philadelphie", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.75,nul:3.50,t2:4.50}, h2h:[], forme_t1:["G","G","N","G","G"], forme_t2:["G","N","G","P","G"] },
+  { id:"m13", group:"G", journee:1, t1:"🇪🇸 Espagne", t1code:"ESP", t1flag:"🇪🇸", t2:"🇨🇻 Cap-Vert", t2code:"CPV", t2flag:"🇨🇻", date:"15 Juin 2026", time:"18h00", venue:"Lumen Field", city:"Seattle", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.08,nul:8.00,t2:20.0}, h2h:[], forme_t1:["G","G","G","G","G"], forme_t2:["G","P","G","N","G"] },
+  { id:"m14", group:"G", journee:1, t1:"🇧🇪 Belgique", t1code:"BEL", t1flag:"🇧🇪", t2:"🇪🇬 Égypte", t2code:"EGY", t2flag:"🇪🇬", date:"15 Juin 2026", time:"21h00", venue:"Mercedes-Benz", city:"Atlanta", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:1.55,nul:3.70,t2:5.50}, h2h:[], forme_t1:["G","G","G","N","G"], forme_t2:["G","G","N","G","P"] },
+
+  // ══ 16 JUIN — SÉNÉGAL ══
+  { id:"m15", group:"H", journee:1, t1:"🇸🇦 Arabie Saoudite", t1code:"KSA", t1flag:"🇸🇦", t2:"🇺🇾 Uruguay", t2code:"URU", t2flag:"🇺🇾", date:"16 Juin 2026", time:"00h00", venue:"BC Place", city:"Vancouver", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:3.50,nul:3.40,t2:2.00}, h2h:[], forme_t1:["G","N","G","P","G"], forme_t2:["G","G","G","G","N"] },
+  { id:"m16", group:"H", journee:1, t1:"🇮🇷 Iran", t1code:"IRN", t1flag:"🇮🇷", t2:"🇳🇿 Nouvelle-Zélande", t2code:"NZL", t2flag:"🇳🇿", date:"16 Juin 2026", time:"03h00", venue:"BMO Field", city:"Toronto", tv:"RTS1 (Sén)", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.00,nul:3.30,t2:3.80}, h2h:[], forme_t1:["G","G","N","G","P"], forme_t2:["P","G","G","N","G"] },
+  { id:"m17", group:"I", journee:1, t1:"🇸🇳 Sénégal", t1code:"SEN", t1flag:"🇸🇳", t2:"🇫🇷 France", t2code:"FRA", t2flag:"🇫🇷", date:"16 Juin 2026", time:"21h00", venue:"MetLife Stadium", city:"New York", tv:"RTS1 (Sén) · TF1 · 2STV", arbitre:"TBD", status:"upcoming", score:null, cotes:{t1:2.10,nul:3.40,t2:2.90}, h2h:[{date:"2002",score:"1-0 SEN",comp:"CDM",winner:"t1"},{date:"1968",score:"2-1 FRA",comp:"Amical",winner:"t2"}], forme_t1:["G","G","N","G","G"], forme_t2:["G","G","G","G","N"], hot:true },
+];
+
+
+
+/* ══ PAGE DÉTAIL MATCH ══ */
+function MatchDetailPage({ T, match, onClose }) {
+  const [tab, setTab] = useState("avantmatch");
+  const [countdown, setCountdown] = useState("");
+
+  useEffect(() => {
+    const matchDate = new Date("2026-06-11T21:00:00");
+    const timer = setInterval(() => {
+      const now = new Date();
+      const diff = matchDate - now;
+      if (diff <= 0) { setCountdown("EN COURS"); clearInterval(timer); return; }
+      const h = Math.floor(diff/3600000);
+      const m = Math.floor((diff%3600000)/60000);
+      const s = Math.floor((diff%60000)/1000);
+      setCountdown(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const squad1 = SQUADS[match.t1] || SQUADS[Object.keys(SQUADS).find(k=>k.includes(match.t1code||"MEX"))||""];
+  const squad2 = SQUADS[match.t2] || SQUADS[Object.keys(SQUADS).find(k=>k.includes(match.t2code||"RSA"))||""];
+
+  const tabs = [
+    ["avantmatch","Avant-Match"],
+    ["compos","Compos"],
+    ["classement","Classement"],
+    ["infos","Infos"],
+  ];
+
+  const formeColor = (r) => r==="G"?"#00C853":r==="P"?"#EF4444":"#F59E0B";
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:T.bg, zIndex:900, display:"flex", flexDirection:"column", overflowY:"hidden" }}>
+
+      {/* HEADER VERT STYLE BESOCCER */}
+      <div style={{ background:"linear-gradient(180deg,#1A5C2A,#0D3D1A)", padding:"12px 16px 0", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+          <button onClick={onClose} style={{ background:"transparent", border:"none", color:"#fff", fontSize:20, cursor:"pointer", padding:4 }}>←</button>
+          <div style={{ flex:1, textAlign:"center", fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:1 }}>
+            COUPE DU MONDE · GROUPE {match.group} · JOURNÉE {match.journee}
+          </div>
+        </div>
+
+        {/* ÉQUIPES + SCORE/HEURE */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-around", marginBottom:14 }}>
+          {/* Équipe 1 */}
+          <div style={{ textAlign:"center", flex:1 }}>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 6px" }}>{match.t1flag}</div>
+            <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:1 }}>{match.t1code}</div>
+          </div>
+
+          {/* Score central */}
+          <div style={{ textAlign:"center", flex:1.2 }}>
+            {match.status==="live" ? (
+              <div style={{ fontSize:36, fontWeight:900, color:"#fff" }}>{match.score}</div>
+            ) : (
+              <div style={{ fontSize:28, fontWeight:900, color:"#fff" }}>{match.time}</div>
+            )}
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{match.date.split(" ").slice(0,2).join(" ").toUpperCase()}</div>
+            {countdown && <div style={{ fontSize:11, color:"#4ADE80", fontFamily:"monospace", marginTop:4, fontWeight:700 }}>{countdown}</div>}
+          </div>
+
+          {/* Équipe 2 */}
+          <div style={{ textAlign:"center", flex:1 }}>
+            <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, margin:"0 auto 6px" }}>{match.t2flag}</div>
+            <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:1 }}>{match.t2code}</div>
+          </div>
+        </div>
+
+        {/* TABS */}
+        <div style={{ display:"flex", overflowX:"auto", borderTop:"1px solid rgba(255,255,255,0.15)" }}>
+          {tabs.map(([v,l])=>(
+            <button key={v} onClick={()=>setTab(v)} style={{ flexShrink:0, padding:"10px 14px", background:"transparent", border:"none", borderBottom:`2px solid ${tab===v?"#fff":"transparent"}`, color:tab===v?"#fff":"rgba(255,255,255,0.55)", fontSize:11, fontWeight:800, cursor:"pointer", letterSpacing:0.5, whiteSpace:"nowrap" }}>{l.toUpperCase()}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* CONTENU */}
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 14px 100px" }}>
+
+        {/* ══ AVANT MATCH ══ */}
+        {tab==="avantmatch" && (
+          <div>
+            {/* COTES */}
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:10 }}>COTES</div>
+              <div style={{ display:"flex", gap:8 }}>
+                {[["1",match.t1code,match.cotes.t1,A.green],["X","NUL",match.cotes.nul,A.gold],["2",match.t2code,match.cotes.t2,A.red]].map(([s,l,c,col])=>(
+                  <div key={s} style={{ flex:1, textAlign:"center", background:T.bg, borderRadius:10, padding:"10px 6px" }}>
+                    <div style={{ fontSize:10, color:T.muted, marginBottom:4 }}>{s} · {l}</div>
+                    <div style={{ fontSize:18, fontWeight:900, color:col, fontFamily:"monospace" }}>{c}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FORME RÉCENTE */}
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>FORME RÉCENTE</div>
+              {[{name:match.t1code, forme:match.forme_t1},{name:match.t2code, forme:match.forme_t2}].map((team,ti)=>(
+                <div key={ti} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:ti===0?12:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, width:40 }}>{team.name}</div>
+                  <div style={{ display:"flex", gap:5 }}>
+                    {team.forme.map((r,i)=>(
+                      <div key={i} style={{ width:26, height:26, borderRadius:"50%", background:formeColor(r), display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:"#fff" }}>{r}</div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* H2H */}
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>DERNIERS AFFRONTEMENTS</div>
+              {match.h2h.map((h,i)=>(
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:i<match.h2h.length-1?`1px solid ${T.border}`:"none" }}>
+                  <div style={{ fontSize:11, color:T.muted, width:36 }}>{h.date}</div>
+                  <div style={{ flex:1, fontSize:11, color:T.muted }}>{h.comp}</div>
+                  <div style={{ fontSize:14, fontWeight:900, fontFamily:"monospace", color:h.winner==="draw"?A.gold:h.winner==="t1"?A.green:A.red }}>{h.score}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* INFOS MATCH */}
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14 }}>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>INFORMATION DU MATCH</div>
+              {[["📺","Diffusion",match.tv],["🏟️","Stade",match.venue],["🏙️","Ville",match.city],["🎙️","Arbitre",match.arbitre]].map(([ico,l,v])=>(
+                <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"9px 0", borderBottom:`1px solid ${T.border}` }}>
+                  <div style={{ fontSize:12, color:T.muted }}>{ico} {l}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"right", maxWidth:"55%" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ COMPOS ══ */}
+        {tab==="compos" && (
+          <div>
+            {[{squad:squad1,team:match.t1,code:match.t1code},{squad:squad2,team:match.t2,code:match.t2code}].map(({squad,team,code},ti)=>(
+              squad ? (
+                <div key={ti} style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:11, fontWeight:800, color:A.gold, letterSpacing:2, marginBottom:10 }}>{code} · {squad.formation} · {squad.coach}</div>
+                  <div style={{ background:"linear-gradient(180deg,#0A3D1F,#0D6B35,#0A3D1F)", borderRadius:14, padding:"16px 8px", marginBottom:12 }}>
+                    {[
+                      squad.titulaires.filter(p=>["AT","AG","AD"].includes(p.pos)),
+                      squad.titulaires.filter(p=>["MDC","MC","MOC","MG","MD"].includes(p.pos)),
+                      squad.titulaires.filter(p=>["DC","DD","DG"].includes(p.pos)),
+                      squad.titulaires.filter(p=>p.pos==="GB"),
+                    ].map((line,li)=>(
+                      <div key={li} style={{ display:"flex", justifyContent:"space-evenly", marginBottom:14 }}>
+                        {line.map((p,i)=><PlayerDot key={i} p={p} color={POS_COLORS[p.pos]||A.gold} size={38}/>)}
+                      </div>
+                    ))}
+                  </div>
+                  {squad.remplacants?.length>0 && (
+                    <div style={{ background:T.card, borderRadius:10, padding:"10px 12px" }}>
+                      <div style={{ fontSize:9, color:T.muted, fontWeight:800, marginBottom:8 }}>REMPLAÇANTS</div>
+                      <div style={{ display:"flex", gap:10, overflowX:"auto" }}>
+                        {squad.remplacants.map((p,i)=><PlayerDot key={i} p={p} color="#555" size={32}/>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div key={ti} style={{ background:T.card, borderRadius:12, padding:20, textAlign:"center", color:T.muted, marginBottom:16 }}>
+                  Compo {code} non disponible
+                </div>
+              )
+            ))}
+          </div>
+        )}
+
+        {/* ══ CLASSEMENT ══ */}
+        {tab==="classement" && (
+          <div>
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:A.gold, letterSpacing:2, marginBottom:12 }}>GROUPE {match.group} · JOURNÉE {match.journee}</div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                <span style={{ fontSize:10, color:T.muted, flex:3 }}>ÉQUIPE</span>
+                {["MJ","MG","MN","MP","BM","BE","Pts"].map(h=>(
+                  <span key={h} style={{ fontSize:10, color:T.muted, textAlign:"center", width:24 }}>{h}</span>
+                ))}
+              </div>
+              {ALL_GROUPS.find(g=>g.group===match.group)?.teams.map((team,i)=>(
+                <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderTop:`1px solid ${T.border}` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, flex:3 }}>
+                    <div style={{ width:20, height:20, borderRadius:"50%", background:i<3?A.green+"22":"transparent", border:`1px solid ${i<3?A.green:T.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:800, color:i<3?A.green:T.muted }}>{i+1}</div>
+                    <span style={{ fontSize:12, color:T.text, fontWeight:600 }}>{team}</span>
+                  </div>
+                  {[0,0,0,0,0,0,0].map((v,j)=>(
+                    <span key={j} style={{ fontSize:12, color:j===6?A.gold:T.muted, fontFamily:"monospace", textAlign:"center", width:24, fontWeight:j===6?900:400 }}>0</span>
+                  ))}
+                </div>
+              ))}
+              <div style={{ fontSize:10, color:T.muted, marginTop:8, fontStyle:"italic" }}>↑ Top 3 qualifiés · Tournoi pas encore commencé</div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ INFOS ══ */}
+        {tab==="infos" && (
+          <div>
+            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:14, marginBottom:14 }}>
+              <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>INFORMATION DU MATCH</div>
+              {[["📺","Diffusion TV",match.tv],["🏟️","Stade",match.venue+" · "+match.city],["🎙️","Arbitre central",match.arbitre],["📅","Date",match.date+" · "+match.time],["🌍","Groupe","Groupe "+match.group+" · Journée "+match.journee]].map(([ico,l,v])=>(
+                <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${T.border}` }}>
+                  <div style={{ fontSize:12, color:T.muted }}>{ico} {l}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.text, textAlign:"right", maxWidth:"55%" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background:T.card, border:`1px solid ${A.green}33`, borderRadius:12, padding:14 }}>
+              <div style={{ fontSize:10, color:A.green, fontWeight:800, letterSpacing:2, marginBottom:10 }}>🦁 ENJEU POUR LE SÉNÉGAL</div>
+              <div style={{ fontSize:13, color:T.text, lineHeight:1.7 }}>
+                Match d'ouverture de la CDM 2026. Le Mexique, pays organisateur, affronte l'Afrique du Sud. Ce résultat influencera les classements dans le groupe A avant que le Sénégal entre en lice le 16 Juin contre la France.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ══ MATCHES TAB ══ */
 function MatchesTab({ T, user }) {
   const [view, setView] = useState("groupes");
+  const [squadView, setSquadView] = useState(null);
+  const [matchDetail, setMatchDetail] = useState(null);
 
   // Trouver le groupe de l'équipe favorite automatiquement
   const defaultGroup = (() => {
@@ -1017,12 +1510,58 @@ function MatchesTab({ T, user }) {
       {/* ══ GROUPES ══ */}
       {view==="groupes" && (
         <div>
+          {/* PROGRAMME CDM PAR JOUR */}
+          {(()=>{
+            const today = "11 Juin 2026";
+            const days = [...new Set(TODAY_MATCHES.map(m=>m.date))];
+            return days.map(day=>{
+              const dayMatches = TODAY_MATCHES.filter(m=>m.date===day);
+              const isToday = day===today;
+              return (
+                <div key={day} style={{ marginBottom:20 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                    <div style={{ height:1, flex:1, background:T.border }} />
+                    <div style={{ fontSize:11, fontWeight:900, color:isToday?A.gold:T.muted, padding:"4px 12px", borderRadius:20, border:`1px solid ${isToday?A.gold+"44":T.border}`, background:isToday?A.gold+"0A":"transparent", whiteSpace:"nowrap" }}>
+                      {isToday?"🔴 AUJOURD'HUI":""} {day}
+                    </div>
+                    <div style={{ height:1, flex:1, background:T.border }} />
+                  </div>
+                  {dayMatches.map((m,i)=>(
+                    <button key={i} onClick={()=>setMatchDetail(m)} style={{
+                      width:"100%", textAlign:"left", cursor:"pointer",
+                      background:m.hot?`linear-gradient(135deg,${A.gold}0A,${T.card})`:T.card,
+                      border:`1px solid ${m.hot?A.gold+"44":isToday?A.green+"33":T.border}`,
+                      borderRadius:12, padding:"12px 14px", marginBottom:8,
+                      position:"relative", overflow:"hidden"
+                    }}>
+                      {m.hot && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.gold},transparent)` }} />}
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                        <span style={{ fontSize:10, color:m.hot?A.gold:T.muted, fontWeight:800 }}>GROUPE {m.group} · J{m.journee}</span>
+                        <span style={{ fontSize:11, fontWeight:900, color:A.gold, fontFamily:"monospace" }}>{m.time}</span>
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                        <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1 }}>{m.t1}</span>
+                        <div style={{ padding:"4px 12px", borderRadius:8, background:m.hot?A.gold+"18":T.card2, fontWeight:900, fontSize:12, color:m.hot?A.gold:T.muted, flexShrink:0 }}>VS</div>
+                        <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1, textAlign:"right" }}>{m.t2}</span>
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between" }}>
+                        <span style={{ fontSize:10, color:T.muted }}>🏟️ {m.venue}</span>
+                        <span style={{ fontSize:10, color:T.muted }}>📺 {m.tv.split("·")[0].trim()}</span>
+                      </div>
+                      {m.hot && <div style={{ fontSize:10, color:A.gold, fontWeight:800, marginTop:4 }}>🔥 CHOC — SÉNÉGAL VS FRANCE</div>}
+                    </button>
+                  ))}
+                </div>
+              );
+            });
+          })()}
+
           {/* BANDEAU INFO */}
           <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:14, padding:"12px 16px", marginBottom:16, display:"flex", gap:10, alignItems:"center" }}>
             <span style={{ fontSize:22 }}>⏳</span>
             <div>
-              <div style={{ fontSize:12, fontWeight:800, color:A.green }}>CDM 2026 · Pas encore commencé</div>
-              <div style={{ fontSize:11, color:T.muted }}>Scores live actifs dès le 11 Juin 2026</div>
+              <div style={{ fontSize:12, fontWeight:800, color:A.green }}>CDM 2026 · C'est parti ! 🎉</div>
+              <div style={{ fontSize:11, color:T.muted }}>Match d'ouverture ce soir · Mexique vs Afrique du Sud</div>
             </div>
           </div>
 
@@ -1089,9 +1628,17 @@ function MatchesTab({ T, user }) {
                         </div>
                         <span style={{ fontSize:15, fontWeight:800, flex:1, textAlign:"right", color:T.text }}>{m.t2}</span>
                       </div>
-                      <div style={{ display:"flex", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:11, color:T.muted }}>📅 {m.date}</span>
-                        <span style={{ fontSize:11, color:T.muted }}>🏟️ {m.venue} · {m.city}</span>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                        <span style={{ fontSize:13, fontWeight:800, color:A.gold }}>📅 {m.date}</span>
+                        <span style={{ fontSize:11, color:T.muted }}>🏟️ {m.venue}</span>
+                      </div>
+                      {/* BOUTONS COMPOSITION */}
+                      <div style={{ display:"flex", gap:6 }}>
+                        {[m.t1, m.t2].filter(team => SQUADS[team]).map((team,ti) => (
+                          <button key={ti} onClick={()=>setSquadView(team)} style={{ flex:1, padding:"7px 8px", background:T.card2, border:`1px solid ${T.border}`, borderRadius:9, fontSize:11, fontWeight:700, color:T.muted, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                            👕 {team.split(" ").slice(1).join(" ")}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   );
@@ -1161,6 +1708,12 @@ function MatchesTab({ T, user }) {
           <ReactionsWidget T={T} />
         </div>
       )}
+
+      {/* COMPOSITION MODAL */}
+      {squadView && <SquadCard T={T} teamName={squadView} onClose={()=>setSquadView(null)} />}
+
+      {/* MATCH DETAIL PAGE */}
+      {matchDetail && <MatchDetailPage T={T} match={matchDetail} onClose={()=>setMatchDetail(null)} />}
     </div>
   );
 }
