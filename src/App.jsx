@@ -496,22 +496,30 @@ async function fetchLiveScores() {
 const WC_API = "https://api.football-data.org/v4/competitions/WC";
 const WC_KEY = "1c977bce952c48e18140ca4307bf2899";
 
+/* ══ FOOTBALL API VIA NETLIFY PROXY ══ */
 async function fetchWCMatches(status) {
   try {
-    const res = await fetch(`${WC_API}/matches?status=${status}`, {
-      headers: { "X-Auth-Token": WC_KEY }
-    });
+    const url = status
+      ? `/.netlify/functions/football?path=competitions/WC/matches&status=${status}`
+      : `/.netlify/functions/football?path=competitions/WC/matches`;
+    const res = await fetch(url);
     if (!res.ok) return [];
     const d = await res.json();
     return d.matches || [];
   } catch { return []; }
 }
 
+async function fetchMatchDetail(matchId) {
+  try {
+    const res = await fetch(`/.netlify/functions/football?matchId=${matchId}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
 async function fetchWCStandings() {
   try {
-    const res = await fetch(`${WC_API}/standings`, {
-      headers: { "X-Auth-Token": WC_KEY }
-    });
+    const res = await fetch(`/.netlify/functions/football?path=competitions/WC/standings`);
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
@@ -527,12 +535,12 @@ async function fetchRealTimeMatches() {
 
 async function fetchUpcomingMatches() {
   const matches = await fetchWCMatches("SCHEDULED");
-  return matches.slice(0, 8);
+  return matches.slice(0, 10);
 }
 
 async function fetchFinishedMatches() {
   const matches = await fetchWCMatches("FINISHED");
-  return matches.slice(-10).reverse();
+  return matches.slice(-15).reverse();
 }
 
 async function fetchTopScorers(leagueId = DATA_CONFIG.WC_2026_ID, season = 2026) {
@@ -2726,6 +2734,9 @@ function LiveScoreWidget({ T }) {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab] = useState("live");
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [matchDetail, setMatchDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -2739,10 +2750,17 @@ function LiveScoreWidget({ T }) {
     setUpcoming(sched);
     setLastUpdate(new Date());
     setLoading(false);
-    // Auto switch tab
     if (live.length > 0) setActiveTab("live");
-    else if (fin.length > 0) setActiveTab("finished");
-    else setActiveTab("upcoming");
+    else if (fin.length > 0 && activeTab === "live") setActiveTab("finished");
+  };
+
+  const openMatch = async (m) => {
+    setSelectedMatch(m);
+    setDetailLoading(true);
+    setMatchDetail(null);
+    const detail = await fetchMatchDetail(m.id);
+    setMatchDetail(detail);
+    setDetailLoading(false);
   };
 
   useEffect(() => {
@@ -2757,39 +2775,183 @@ function LiveScoreWidget({ T }) {
     return `${h} – ${a}`;
   };
 
-  const formatStatus = (m) => {
-    if (m.status === "FINISHED") return "FIN";
-    if (m.status === "IN_PLAY") return `${m.minute || ""}'`;
+  const getMinute = (m) => {
     if (m.status === "HALF_TIME") return "MT";
     if (m.status === "PAUSED") return "MT";
-    return m.status;
+    if (m.minute) return `${m.minute}'`;
+    return "";
   };
 
-  const MatchCard = ({ m, showScore }) => (
-    <div style={{ background:T.bg, borderRadius:12, padding:"10px 14px", marginBottom:8, border:`1px solid ${T.border}` }}>
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-        <span style={{ fontSize:10, color:T.muted }}>Groupe {m.group?.replace("Group ","") || "CDM"}</span>
-        <span style={{ fontSize:10, fontWeight:800, color:m.status==="IN_PLAY"?A.red:m.status==="FINISHED"?A.green:A.gold }}>
-          {formatStatus(m)}
-        </span>
-      </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1 }}>{m.homeTeam?.shortName || m.homeTeam?.name}</span>
-        <div style={{ padding:"5px 12px", borderRadius:8, background:m.status==="IN_PLAY"?A.red+"18":T.card2, fontFamily:"monospace", fontWeight:900, fontSize:14, color:m.status==="IN_PLAY"?A.red:T.text, minWidth:50, textAlign:"center" }}>
-          {showScore ? formatScore(m) : m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS"}
+  const statusColor = (s) => s==="IN_PLAY"||s==="PAUSED"?A.red:s==="FINISHED"?A.green:A.gold;
+  const statusLabel = (s) => s==="IN_PLAY"?"EN DIRECT":s==="HALF_TIME"?"MI-TEMPS":s==="PAUSED"?"PAUSE":s==="FINISHED"?"TERMINÉ":s==="SCHEDULED"?"À VENIR":"CDM";
+
+  /* ── PAGE DÉTAIL MATCH LIVE ── */
+  if (selectedMatch) {
+    const m = matchDetail || selectedMatch;
+    const isLive = ["IN_PLAY","PAUSED","HALF_TIME"].includes(m.status);
+    const isDone = m.status === "FINISHED";
+    const goals = m.goals || [];
+    const bookings = m.bookings || [];
+    const subs = m.substitutions || [];
+
+    return (
+      <div style={{ animation:"fadeIn 0.3s ease" }}>
+        {/* BACK */}
+        <button onClick={()=>setSelectedMatch(null)} style={{ display:"flex", alignItems:"center", gap:6, background:"transparent", border:"none", color:T.muted, cursor:"pointer", marginBottom:14, padding:0 }}>
+          ← Retour aux scores
+        </button>
+
+        {/* HEADER MATCH */}
+        <div style={{ background:`linear-gradient(135deg,#0D3D1A,#1A5C2A)`, borderRadius:16, padding:"20px 16px", marginBottom:16 }}>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", textAlign:"center", marginBottom:10, letterSpacing:2 }}>
+            COUPE DU MONDE 2026 · GROUPE {m.group?.replace("Group ","")||""}
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div style={{ textAlign:"center", flex:1 }}>
+              <div style={{ fontSize:32, marginBottom:6 }}>{m.homeTeam?.shortName||m.homeTeam?.name}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{m.homeTeam?.shortName||m.homeTeam?.name}</div>
+            </div>
+            <div style={{ textAlign:"center", flex:1.2 }}>
+              {isLive || isDone ? (
+                <div>
+                  <div style={{ fontSize:40, fontWeight:900, color:"#fff", fontFamily:"monospace", letterSpacing:4 }}>{formatScore(m)}</div>
+                  <div style={{ fontSize:12, fontWeight:800, color:isLive?A.red:"#4ADE80", marginTop:4, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                    {isLive && <Dot color={A.red} size={7}/>}
+                    {isLive ? getMinute(m)||"EN DIRECT" : "TERMINÉ"}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize:28, fontWeight:900, color:"#fff" }}>
+                    {m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS"}
+                  </div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:4 }}>
+                    {m.utcDate ? new Date(m.utcDate).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}) : ""}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign:"center", flex:1 }}>
+              <div style={{ fontSize:32, marginBottom:6 }}>{m.awayTeam?.shortName||m.awayTeam?.name}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{m.awayTeam?.shortName||m.awayTeam?.name}</div>
+            </div>
+          </div>
+          {m.venue && <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"center", marginTop:10 }}>🏟️ {m.venue}</div>}
         </div>
-        <span style={{ fontSize:13, fontWeight:700, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName || m.awayTeam?.name}</span>
+
+        {detailLoading && (
+          <div style={{ textAlign:"center", padding:"20px 0", color:T.muted }}>
+            <div style={{ fontSize:24 }}>⏳</div>
+            <div style={{ fontSize:12, marginTop:8 }}>Chargement des données...</div>
+          </div>
+        )}
+
+        {/* BUTS */}
+        {goals.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
+            <div style={{ fontSize:10, color:A.gold, fontWeight:800, letterSpacing:2, marginBottom:12 }}>⚽ BUTS</div>
+            {goals.map((g,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:i<goals.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ fontSize:14 }}>⚽</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{g.scorer?.name}</div>
+                  <div style={{ fontSize:11, color:T.muted }}>{g.team?.name} {g.assist?.name ? `· Passe: ${g.assist.name}` : ""}</div>
+                </div>
+                <div style={{ fontSize:14, fontWeight:900, color:A.gold, fontFamily:"monospace" }}>{g.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CARTONS */}
+        {bookings.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
+            <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>🟨 CARTONS</div>
+            {bookings.map((b,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0", borderBottom:i<bookings.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ fontSize:16 }}>{b.card==="YELLOW_CARD"?"🟨":"🟥"}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{b.player?.name}</div>
+                  <div style={{ fontSize:11, color:T.muted }}>{b.team?.name}</div>
+                </div>
+                <div style={{ fontSize:13, fontWeight:700, color:T.muted, fontFamily:"monospace" }}>{b.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* REMPLACEMENTS */}
+        {subs.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
+            <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>🔄 REMPLACEMENTS</div>
+            {subs.map((s,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0", borderBottom:i<subs.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ fontSize:14 }}>🔄</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:12, color:A.green }}>↑ {s.playerIn?.name}</div>
+                  <div style={{ fontSize:12, color:A.red }}>↓ {s.playerOut?.name}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{s.team?.name}</div>
+                </div>
+                <div style={{ fontSize:13, color:T.muted, fontFamily:"monospace" }}>{s.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!detailLoading && goals.length === 0 && bookings.length === 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20, textAlign:"center" }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>📊</div>
+            <div style={{ fontSize:13, color:T.muted }}>
+              {isLive ? "Match en cours · Données en attente..." : isDone ? "Données détaillées non disponibles" : "Match pas encore commencé"}
+            </div>
+          </div>
+        )}
+
+        {isLive && (
+          <button onClick={()=>openMatch(selectedMatch)} style={{ width:"100%", padding:"10px", background:A.red+"18", border:`1px solid ${A.red}44`, borderRadius:12, color:A.red, fontWeight:800, fontSize:12, cursor:"pointer", marginTop:8 }}>
+            🔄 Actualiser les données
+          </button>
+        )}
       </div>
-    </div>
-  );
+    );
+  }
+
+  /* ── LISTE MATCHS ── */
+  const MatchRow = ({ m }) => {
+    const isLive = ["IN_PLAY","PAUSED","HALF_TIME"].includes(m.status);
+    const isDone = m.status === "FINISHED";
+    return (
+      <button onClick={()=>openMatch(m)} style={{ width:"100%", textAlign:"left", background:isLive?A.red+"08":T.bg, border:`1px solid ${isLive?A.red+"44":T.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer", position:"relative", overflow:"hidden" }}>
+        {isLive && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.red},transparent)` }} />}
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <span style={{ fontSize:10, color:T.muted }}>Groupe {m.group?.replace("Group ","")||"CDM"}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+            {isLive && <Dot color={A.red} size={6}/>}
+            <span style={{ fontSize:10, fontWeight:800, color:statusColor(m.status) }}>{statusLabel(m.status)}{isLive&&getMinute(m)?" · "+getMinute(m):""}</span>
+          </div>
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:14, fontWeight:700, color:T.text, flex:1 }}>{m.homeTeam?.shortName||m.homeTeam?.name}</span>
+          <div style={{ padding:"5px 12px", borderRadius:8, background:isLive?A.red+"18":isDone?"#1A2A1A":T.card, fontFamily:"monospace", fontWeight:900, fontSize:isLive||isDone?16:13, color:isLive?A.red:isDone?"#4ADE80":T.muted, minWidth:60, textAlign:"center" }}>
+            {isLive||isDone ? formatScore(m) : m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS"}
+          </div>
+          <span style={{ fontSize:14, fontWeight:700, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName||m.awayTeam?.name}</span>
+        </div>
+        <div style={{ fontSize:10, color:T.muted, marginTop:6, display:"flex", justifyContent:"space-between" }}>
+          <span>{m.venue||""}</span>
+          <span style={{ color:isLive?A.red:T.muted }}>Tap pour détails →</span>
+        </div>
+      </button>
+    );
+  };
 
   return (
-    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:14 }}>
+    <div style={{ background:T.card, border:`1px solid ${liveMatches.length>0?A.red+"44":T.border}`, borderRadius:16, padding:16, marginBottom:14 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:6 }}>
           {liveMatches.length > 0 && <Dot color={A.red}/>}
           <span style={{ fontSize:11, fontWeight:800, color:liveMatches.length>0?A.red:A.green, letterSpacing:1 }}>
-            {liveMatches.length > 0 ? `${liveMatches.length} EN DIRECT` : "CDM 2026"}
+            {liveMatches.length > 0 ? `${liveMatches.length} MATCH${liveMatches.length>1?"S":""} EN DIRECT` : "CDM 2026 · SCORES"}
           </span>
         </div>
         <button onClick={refresh} disabled={loading} style={{ background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>
@@ -2799,41 +2961,389 @@ function LiveScoreWidget({ T }) {
 
       {/* TABS */}
       <div style={{ display:"flex", gap:4, marginBottom:12 }}>
-        {[["live",`🔴 Live (${liveMatches.length})`],["finished",`✅ Finis (${finished.length})`],["upcoming","📅 À venir"]].map(([v,l])=>(
-          <button key={v} onClick={()=>setActiveTab(v)} style={{ flex:1, padding:"6px 4px", borderRadius:8, border:`1px solid ${activeTab===v?A.gold:T.border}`, background:activeTab===v?A.gold+"14":"transparent", color:activeTab===v?A.gold:T.muted, fontSize:10, fontWeight:700, cursor:"pointer" }}>{l}</button>
+        {[["live",`🔴 Live${liveMatches.length>0?" ("+liveMatches.length+")":""}`],["finished",`✅ Finis${finished.length>0?" ("+finished.length+")":""}`],["upcoming","📅 À venir"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setActiveTab(v)} style={{ flex:1, padding:"7px 4px", borderRadius:8, border:`1px solid ${activeTab===v?A.gold:T.border}`, background:activeTab===v?A.gold+"14":"transparent", color:activeTab===v?A.gold:T.muted, fontSize:10, fontWeight:700, cursor:"pointer" }}>{l}</button>
         ))}
       </div>
 
-      {/* LIVE */}
       {activeTab==="live" && (
         liveMatches.length > 0
-          ? liveMatches.map((m,i) => <MatchCard key={i} m={m} showScore={true}/>)
-          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Aucun match en direct · Prochain: {upcoming[0]?.homeTeam?.shortName} vs {upcoming[0]?.awayTeam?.shortName}</div>
+          ? liveMatches.map((m,i) => <MatchRow key={i} m={m}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0" }}>
+              <div style={{ fontSize:20, marginBottom:6 }}>⏳</div>
+              <div style={{ fontSize:12, color:T.muted }}>Aucun match en direct pour le moment</div>
+              {upcoming[0] && <div style={{ fontSize:11, color:A.gold, marginTop:6 }}>Prochain : {upcoming[0].homeTeam?.shortName} vs {upcoming[0].awayTeam?.shortName}</div>}
+            </div>
       )}
 
-      {/* FINIS */}
       {activeTab==="finished" && (
         finished.length > 0
-          ? finished.map((m,i) => <MatchCard key={i} m={m} showScore={true}/>)
-          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Pas encore de matchs terminés</div>
+          ? finished.map((m,i) => <MatchRow key={i} m={m}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0", fontSize:12, color:T.muted }}>Pas encore de matchs terminés</div>
       )}
 
-      {/* À VENIR */}
       {activeTab==="upcoming" && (
         upcoming.length > 0
-          ? upcoming.map((m,i) => <MatchCard key={i} m={m} showScore={false}/>)
-          : <div style={{ textAlign:"center", padding:"16px 0", color:T.muted, fontSize:12 }}>Programme à venir</div>
+          ? upcoming.map((m,i) => <MatchRow key={i} m={m}/>)
+          : <div style={{ textAlign:"center", padding:"16px 0", fontSize:12, color:T.muted }}>Pas de matchs programmés</div>
       )}
 
       {lastUpdate && (
         <div style={{ fontSize:10, color:T.muted, marginTop:8, textAlign:"right" }}>
-          🔄 {lastUpdate.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
+          🔄 Actualisation auto · {lastUpdate.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
         </div>
       )}
     </div>
   );
 }
 
+
+/* ══ AI TAB ══ */
+const AI_SYSTEM = "Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026. Tu analyses les matchs de la Coupe du Monde 2026 avec passion et expertise. Tu parles en français. Tu réponds en 4-6 phrases avec des emojis football. Tu connais l'histoire du Sénégal au Mondial (2002 quarts, 2022 huitièmes). Tu préds une victoire du Sénégal en 2026.";
+
+async function askClaude(messages, system) {
+  try {
+    const res = await fetch("/.netlify/functions/claude", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:800, system, messages })
+    });
+    const d = await res.json();
+    return d.content?.[0]?.text || "❌ Connexion impossible. Réessaie dans un instant.";
+  } catch { return "❌ Connexion impossible. Réessaie dans un instant."; }
+}
+
+function AITab({ T, user }) {
+  const [mode, setMode] = useState("predict");
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [chat, setChat] = useState([]);
+  const [selMatchGroup, setSelMatchGroup] = useState("D");
+  const [selMatch, setSelMatch] = useState(null);
+  const [matchPrediction, setMatchPrediction] = useState(null);
+  const [predLoading, setPredLoading] = useState(false);
+
+  const run = async (prompt) => {
+    if (!prompt?.trim()) return;
+    setLoading(true); setResult(null);
+    const msgs = mode==="live" ? [...chat, {role:"user",content:prompt}] : [{role:"user",content:prompt}];
+    const reply = await askClaude(msgs, AI_SYSTEM);
+    if (mode==="live") setChat(prev=>[...prev,{role:"user",content:prompt},{role:"assistant",content:reply}]);
+    setResult(reply);
+    setLoading(false);
+  };
+
+  const predictMatch = async (t1, t2) => {
+    setPredLoading(true); setMatchPrediction(null);
+    const prompt = `Prédit le match ${t1} vs ${t2} de la CDM 2026. Réponds UNIQUEMENT en JSON: {"team1":"${t1}","team2":"${t2}","score_predit":"X-X","winner":"nom ou Nul","proba_team1":45,"proba_nul":25,"proba_team2":30,"analyse":"2 phrases","facteur_cle":"facteur","joueur_a_surveiller":"nom"}`;
+    try {
+      const res = await fetch("/.netlify/functions/claude", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, system:"Réponds uniquement en JSON valide, sans markdown.", messages:[{role:"user",content:prompt}] })
+      });
+      const d = await res.json();
+      const text = d.content?.[0]?.text || "{}";
+      setMatchPrediction(JSON.parse(text.replace(/```json|```/g,"").trim()));
+    } catch { setMatchPrediction(null); }
+    setPredLoading(false);
+  };
+
+  const groupData = ALL_GROUPS.find(g=>g.group===selMatchGroup);
+
+  return (
+    <div style={{ animation:"fadeIn 0.3s ease" }}>
+      {/* TABS */}
+      <div style={{ display:"flex", gap:5, marginBottom:16, overflowX:"auto" }}>
+        {[["predict","🦁 Sénégal"],["matches","⚽ Prédire matchs"],["live","🎙️ Commentaire"]].map(([k,l])=>(
+          <button key={k} onClick={()=>{setMode(k);setResult(null);setChat([]);setMatchPrediction(null);}} style={{ flexShrink:0, padding:"8px 14px", borderRadius:10, border:`1px solid ${mode===k?A.gold:T.border}`, background:mode===k?A.gold+"18":"transparent", color:mode===k?A.gold:T.muted, fontSize:11, fontWeight:800, cursor:"pointer" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* ══ SÉNÉGAL ══ */}
+      {mode==="predict" && (
+        <div>
+          <LiveScoreWidget T={T} />
+          <div style={{ background:T.card, border:`1px solid ${A.gold}33`, borderRadius:16, padding:18, marginBottom:14 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+              <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.blue},${A.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🤖</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:800, color:T.text }}>GPT-LIONS · Powered by Claude</div>
+                <div style={{ fontSize:10, color:T.muted }}>IA officielle Lions Arena 2026</div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.green} size={8}/><span style={{ fontSize:10, color:A.green, fontWeight:700 }}>EN LIGNE</span></div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {[
+                { label:"🦁 Sénégal vs France · Prédiction complète", prompt:"Analyse le match Sénégal vs France du 16 juin 2026. Probabilités, scénario, facteurs clés, joueurs décisifs." },
+                { label:"📊 Parcours Sénégal · Groupe D complet", prompt:"Prédit le parcours complet du Sénégal dans le Groupe D : résultats vs France, Norvège, Irak. Qui se qualifie ?" },
+                { label:"🏆 Jusqu'où ira le Sénégal ?", prompt:"Analyse les chances du Sénégal d'aller en finale de la CDM 2026. Quels adversaires possibles ? Peut-on gagner ?" },
+              ].map((btn,i)=>(
+                <button key={i} onClick={()=>run(btn.prompt)} disabled={loading} style={{ padding:"12px 14px", background:T.card2, border:`1px solid ${T.border}`, borderRadius:12, color:T.text, fontSize:12, fontWeight:600, cursor:"pointer", textAlign:"left" }}>
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+            {loading && <div style={{ textAlign:"center", padding:"20px 0" }}><div style={{ fontSize:28 }}>⚽</div><div style={{ fontSize:12, color:T.muted, marginTop:8 }}>GPT-LIONS analyse...</div></div>}
+            {result && !loading && (
+              <div style={{ background:T.card2, border:`1px solid ${A.gold}33`, borderRadius:12, padding:14, marginTop:14 }}>
+                <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:8 }}>🤖 ANALYSE GPT-LIONS</div>
+                <div style={{ fontSize:13, color:T.text, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{result}</div>
+                <button onClick={()=>setResult(null)} style={{ marginTop:10, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>✕ Fermer</button>
+              </div>
+            )}
+          </div>
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:18 }}>
+            <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:A.gold, marginBottom:14 }}>📊 MODÈLE IA · SÉNÉGAL VS FRANCE</div>
+            {[{l:"🦁 Victoire Sénégal",p:63,c:A.green},{l:"🤝 Match nul",p:18,c:A.gold},{l:"🇫🇷 Victoire France",p:19,c:A.red}].map((x,i)=>(
+              <div key={i} style={{ marginBottom:13 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}><span style={{ fontSize:13, color:T.text }}>{x.l}</span><span style={{ fontSize:18, fontWeight:900, fontFamily:"monospace", color:x.c }}>{x.p}%</span></div>
+                <Bar value={x.p} max={100} color={x.c} T={T} h={7} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ PRÉDIRE MATCHS ══ */}
+      {mode==="matches" && (
+        <div>
+          <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:14, padding:"12px 16px", marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:A.green }}>⚽ PRÉDICTIONS CDM 2026</div>
+            <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>Choisis un groupe puis un match 🤖</div>
+          </div>
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:14 }}>
+            {ALL_GROUPS.map(g=>(
+              <button key={g.group} onClick={()=>{setSelMatchGroup(g.group);setSelMatch(null);setMatchPrediction(null);}} style={{ flexShrink:0, width:36, height:36, borderRadius:9, border:`2px solid ${selMatchGroup===g.group?g.color:T.border}`, background:selMatchGroup===g.group?g.color+"22":T.card, color:selMatchGroup===g.group?g.color:T.muted, fontWeight:900, fontSize:12, cursor:"pointer", position:"relative" }}>
+                {g.group}
+                {g.senegal && <div style={{ position:"absolute", top:1, right:1, width:5, height:5, borderRadius:"50%", background:A.green }} />}
+              </button>
+            ))}
+          </div>
+          {groupData && (
+            <div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
+                {groupData.matches.map((m,i)=>{
+                  const isSel = selMatch?.t1===m.t1&&selMatch?.t2===m.t2;
+                  return (
+                    <button key={i} onClick={()=>{setSelMatch(m);setMatchPrediction(null);}} style={{ background:isSel?`linear-gradient(135deg,${A.green}14,${T.card})`:T.card, border:`1px solid ${isSel?A.green+"55":T.border}`, borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:14, fontWeight:700, color:T.text }}>{m.t1}</span>
+                        <div style={{ padding:"4px 10px", borderRadius:8, background:isSel?A.green+"18":T.card2, fontWeight:900, fontSize:12, color:isSel?A.green:T.muted }}>VS</div>
+                        <span style={{ fontSize:14, fontWeight:700, color:T.text }}>{m.t2}</span>
+                      </div>
+                      <div style={{ fontSize:10, color:T.muted, marginTop:6 }}>📅 {m.date} · {m.time}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {selMatch && (
+                <button onClick={()=>predictMatch(selMatch.t1, selMatch.t2)} disabled={predLoading} style={{ width:"100%", padding:"14px", marginBottom:16, background:predLoading?"#1A1A2E":`linear-gradient(135deg,${A.green},${A.blue})`, border:"none", borderRadius:14, color:predLoading?T.muted:"#fff", fontWeight:900, fontSize:14, cursor:predLoading?"not-allowed":"pointer" }}>
+                  {predLoading ? "🤖 Analyse en cours..." : `🔮 Prédire ce match`}
+                </button>
+              )}
+              {matchPrediction && (
+                <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}44`, borderRadius:18, padding:20 }}>
+                  <div style={{ fontSize:10, fontWeight:900, letterSpacing:2, color:A.green, marginBottom:14 }}>🤖 PRÉDICTION GPT-LIONS</div>
+                  <div style={{ textAlign:"center", marginBottom:16 }}>
+                    <div style={{ fontSize:32, fontWeight:900, fontFamily:"monospace", color:A.gold }}>{matchPrediction.score_predit}</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:A.green, marginTop:4 }}>🏆 {matchPrediction.winner}</div>
+                  </div>
+                  {[{label:matchPrediction.team1,p:matchPrediction.proba_team1,c:A.green},{label:"Nul",p:matchPrediction.proba_nul,c:A.gold},{label:matchPrediction.team2,p:matchPrediction.proba_team2,c:A.blue}].map((x,i)=>(
+                    <div key={i} style={{ marginBottom:8 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}><span style={{ fontSize:12, color:T.text }}>{x.label}</span><span style={{ fontSize:14, fontWeight:900, color:x.c }}>{x.p}%</span></div>
+                      <Bar value={x.p} max={100} color={x.c} T={T} h={6} />
+                    </div>
+                  ))}
+                  <div style={{ background:T.card2, borderRadius:12, padding:12, marginTop:12 }}>
+                    <div style={{ fontSize:11, color:T.text, lineHeight:1.7 }}>{matchPrediction.analyse}</div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginTop:10 }}>
+                    <div style={{ flex:1, background:A.gold+"0A", border:`1px solid ${A.gold}22`, borderRadius:10, padding:"10px 12px" }}>
+                      <div style={{ fontSize:9, color:A.gold, fontWeight:800, marginBottom:4 }}>⚡ FACTEUR CLÉ</div>
+                      <div style={{ fontSize:12, color:T.text }}>{matchPrediction.facteur_cle}</div>
+                    </div>
+                    <div style={{ flex:1, background:A.purple+"0A", border:`1px solid ${A.purple}22`, borderRadius:10, padding:"10px 12px" }}>
+                      <div style={{ fontSize:9, color:A.purple, fontWeight:800, marginBottom:4 }}>⭐ À SURVEILLER</div>
+                      <div style={{ fontSize:12, color:T.text }}>{matchPrediction.joueur_a_surveiller}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══ COMMENTAIRE LIVE ══ */}
+      {mode==="live" && (
+        <div style={{ background:T.card, border:`1px solid ${A.red}33`, borderRadius:18, padding:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+            <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${A.red},#FF6B35)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🎙️</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:800, color:T.text }}>COMMENTAIRE RADIO LIVE</div>
+              <div style={{ fontSize:10, color:T.muted }}>Décris la situation — GPT-LIONS commente !</div>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:4 }}><Dot color={A.red} size={8}/><span style={{ fontSize:10, color:A.red, fontWeight:700 }}>LIVE</span></div>
+          </div>
+          {chat.length > 0 && (
+            <div style={{ maxHeight:240, overflowY:"auto", marginBottom:12, display:"flex", flexDirection:"column", gap:8 }}>
+              {chat.map((msg,i)=>(
+                <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:msg.role==="user"?A.blue+"14":T.card2, fontSize:12, color:T.text, lineHeight:1.6 }}>
+                  <span style={{ fontSize:9, fontWeight:800, color:msg.role==="user"?A.blue:A.gold, display:"block", marginBottom:3 }}>{msg.role==="user"?"🎙️ "+(user?.name||"Toi"):"🤖 GPT-LIONS"}</span>
+                  {msg.content}
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display:"flex", gap:8 }}>
+            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&run(input)} placeholder="Ex: Mané dribble 2 défenseurs, 87e minute..." style={{ flex:1, background:T.input, border:`1px solid ${T.inputBorder}`, color:T.text, borderRadius:10, padding:"10px 14px", fontSize:12, outline:"none" }} />
+            <button onClick={()=>run(input)} disabled={loading||!input.trim()} style={{ background:`linear-gradient(135deg,${A.red},#FF6B35)`, border:"none", color:"#fff", borderRadius:10, padding:"10px 14px", cursor:loading?"not-allowed":"pointer", fontWeight:800, fontSize:14, opacity:loading||!input.trim()?0.5:1 }}>🎙️</button>
+          </div>
+          {chat.length > 0 && <button onClick={()=>setChat([])} style={{ width:"100%", marginTop:8, background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"6px", fontSize:11, cursor:"pointer" }}>🗑️ Effacer</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══ COMMUNITY TAB ══ */
+function CommunityTab({ T, user }) {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [topic, setTopic] = useState("senegal");
+  const [filter, setFilter] = useState("tous");
+  const [liked, setLiked] = useState({});
+  const [posting, setPosting] = useState(false);
+  const userId = getUserId();
+
+  const topics = [
+    { id:"senegal", label:"🦁 Lions", color:A.green },
+    { id:"groupeD", label:"⚔️ Groupe D", color:A.gold },
+    { id:"ia", label:"🤖 IA", color:A.blue },
+    { id:"general", label:"🌍 Général", color:"#8888AA" },
+  ];
+
+  const loadComments = async () => {
+    const data = await fbGet("comments");
+    data.sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+    setComments(data);
+    const myLikes = {};
+    data.forEach(c => { if ((c.likedBy||[]).includes(userId)) myLikes[c.id] = true; });
+    setLiked(myLikes);
+  };
+
+  useEffect(() => {
+    loadComments();
+    const interval = setInterval(loadComments, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const timeAgo = (iso) => {
+    if (!iso) return "À l'instant";
+    const diff = Math.floor((new Date() - new Date(iso)) / 1000);
+    if (diff < 60) return "À l'instant";
+    if (diff < 3600) return `Il y a ${Math.floor(diff/60)}min`;
+    if (diff < 86400) return `Il y a ${Math.floor(diff/3600)}h`;
+    return `Il y a ${Math.floor(diff/86400)}j`;
+  };
+
+  const handleLike = async (c) => {
+    if (liked[c.id]) return;
+    const newLikedBy = [...(c.likedBy||[]), userId];
+    const newLikes = (parseInt(c.likes)||0) + 1;
+    setLiked(p=>({...p,[c.id]:true}));
+    setComments(prev=>prev.map(x=>x.id===c.id?{...x,likes:newLikes,likedBy:newLikedBy}:x));
+    await fbUpdate("comments", c.id, { likes: newLikes, likedBy: newLikedBy });
+  };
+
+  const handleSubmit = async () => {
+    if (!newComment.trim() || posting) return;
+    setPosting(true);
+    await fbAdd("comments", { name: user?.name || "Lion Anonyme", flag:"🇸🇳", text: newComment.trim(), topic, likes:0, likedBy:[], userId });
+    setNewComment("");
+    await loadComments();
+    setPosting(false);
+  };
+
+  const filtered = filter==="tous" ? comments : comments.filter(c=>c.topic===filter);
+  const topicColor = (t) => topics.find(x=>x.id===t)?.color || "#8888AA";
+  const topicLabel = (t) => topics.find(x=>x.id===t)?.label || t;
+
+  return (
+    <div style={{ animation:"fadeIn 0.3s ease" }}>
+      <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:16, padding:"14px 16px", marginBottom:16 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:A.green, marginBottom:4 }}>💬 FORUM LIONS ARENA</div>
+        <div style={{ fontSize:11, color:T.muted }}>Donne ton avis · Temps réel · Visible par tous 🔥</div>
+        <div style={{ marginTop:10, display:"flex", gap:8 }}>
+          {[{v:comments.length,l:"Avis",c:A.gold},{v:comments.reduce((a,c)=>a+(parseInt(c.likes)||0),0),l:"Likes",c:A.green}].map((x,i)=>(
+            <div key={i} style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
+              <div style={{ fontSize:18, fontWeight:900, color:x.c }}>{x.v}</div>
+              <div style={{ fontSize:10, color:T.muted }}>{x.l}</div>
+            </div>
+          ))}
+          <div style={{ textAlign:"center", flex:1, background:T.bg, borderRadius:10, padding:"8px" }}>
+            <div style={{ fontSize:14, fontWeight:900, color:A.purple }}>🔄 10s</div>
+            <div style={{ fontSize:10, color:T.muted }}>Live</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:16 }}>
+        <div style={{ fontSize:11, fontWeight:800, color:T.text, marginBottom:10 }}>✍️ Ton avis, {user?.name || "Lion"} !</div>
+        <div style={{ display:"flex", gap:6, marginBottom:10, flexWrap:"wrap" }}>
+          {topics.map(tp=>(
+            <button key={tp.id} onClick={()=>setTopic(tp.id)} style={{ padding:"4px 10px", borderRadius:20, border:`1px solid ${topic===tp.id?tp.color:T.border}`, background:topic===tp.id?tp.color+"18":"transparent", color:topic===tp.id?tp.color:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{tp.label}</button>
+          ))}
+        </div>
+        <textarea value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Que penses-tu du match Sénégal vs France ?" rows={3}
+          style={{ width:"100%", background:T.input, border:`1px solid ${newComment.trim()?A.green+"55":T.inputBorder}`, borderRadius:12, padding:"10px 14px", fontSize:13, color:T.text, outline:"none", resize:"none", fontFamily:"inherit", lineHeight:1.6 }} />
+        <button onClick={handleSubmit} disabled={!newComment.trim()||posting}
+          style={{ width:"100%", marginTop:10, padding:"11px", background:newComment.trim()&&!posting?`linear-gradient(135deg,${A.green},${A.gold})`:"#1A1A2E", border:"none", borderRadius:12, color:newComment.trim()&&!posting?"#000":T.muted, fontWeight:800, fontSize:13, cursor:newComment.trim()&&!posting?"pointer":"not-allowed" }}>
+          {posting ? "⏳ Publication..." : "🦁 Publier mon avis"}
+        </button>
+      </div>
+
+      <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
+        {[["tous","🌍 Tous"],["senegal","🦁 Lions"],["groupeD","⚔️ Groupe D"],["ia","🤖 IA"],["general","🌍 Général"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setFilter(v)} style={{ flexShrink:0, padding:"6px 12px", borderRadius:20, border:`1px solid ${filter===v?A.gold:T.border}`, background:filter===v?A.gold+"14":"transparent", color:filter===v?A.gold:T.muted, fontSize:11, fontWeight:700, cursor:"pointer" }}>{l}</button>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {filtered.map((c,i)=>(
+          <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:A.green+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{c.flag||"🇸🇳"}</div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{timeAgo(c.createdAt)}</div>
+                </div>
+              </div>
+              <div style={{ padding:"3px 8px", borderRadius:20, background:topicColor(c.topic)+"18", border:`1px solid ${topicColor(c.topic)}33` }}>
+                <span style={{ fontSize:10, fontWeight:700, color:topicColor(c.topic) }}>{topicLabel(c.topic)}</span>
+              </div>
+            </div>
+            <div style={{ fontSize:13, color:T.text, lineHeight:1.65, marginBottom:10 }}>{c.text}</div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <button onClick={()=>handleLike(c)} style={{ display:"flex", alignItems:"center", gap:6, background:liked[c.id]?A.gold+"14":"transparent", border:`1px solid ${liked[c.id]?A.gold+"44":T.border}`, borderRadius:20, padding:"5px 12px", cursor:liked[c.id]?"default":"pointer" }}>
+                <span style={{ fontSize:14 }}>{liked[c.id]?"❤️":"🤍"}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:liked[c.id]?A.gold:T.muted }}>{parseInt(c.likes)||0}</span>
+              </button>
+              <span style={{ fontSize:10, color:T.muted }}>#{i+1}</span>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ textAlign:"center", padding:"30px 0", color:T.muted }}>
+            <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
+            <div style={{ fontSize:13 }}>Sois le premier à donner ton avis !</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ══ MAIN APP ══ */
 const NAV_ICONS = {
