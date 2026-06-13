@@ -566,7 +566,7 @@ async function askClaude(messages, system) {
   } catch { return "❌ Connexion impossible. Réessaie dans un instant."; }
 }
 
-const AI_SYSTEM = "Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026. Tu analyses les matchs avec passion et expertise. Tu parles en francais. Reponds en 3-5 phrases avec emojis football. Stats: Klose 16 buts record. Senegal bat France 1-0 en 2002 (Papa Bouba Diop). Prediction 2026: 63% Senegal.";
+const AI_SYSTEM = "Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026. Tu analyses les matchs de la Coupe du Monde 2026 avec passion et expertise. Tu parles en français. Tu réponds en 4-6 phrases avec des emojis football. Tu connais l'histoire du Sénégal au Mondial (2002 quarts, 2022 huitièmes). Tu prédis une victoire du Sénégal en 2026.";
 
 /* ══ SMALL UTILS ══ */
 function Dot({ color=A.red, size=9 }) {
@@ -2999,18 +2999,7 @@ function LiveScoreWidget({ T }) {
 
 
 /* ══ AI TAB ══ */
-const AI_SYSTEM = "Tu es GPT-LIONS, l'IA officielle de Lions Arena 2026. Tu analyses les matchs de la Coupe du Monde 2026 avec passion et expertise. Tu parles en français. Tu réponds en 4-6 phrases avec des emojis football. Tu connais l'histoire du Sénégal au Mondial (2002 quarts, 2022 huitièmes). Tu préds une victoire du Sénégal en 2026.";
 
-async function askClaude(messages, system) {
-  try {
-    const res = await fetch("/.netlify/functions/claude", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:800, system, messages })
-    });
-    const d = await res.json();
-    return d.content?.[0]?.text || "❌ Connexion impossible. Réessaie dans un instant.";
-  } catch { return "❌ Connexion impossible. Réessaie dans un instant."; }
-}
 
 function AITab({ T, user }) {
   const [mode, setMode] = useState("predict");
