@@ -1514,7 +1514,7 @@ function MatchDetailPage({ T, match, onClose }) {
       {/* HEADER VERT */}
       <div style={{ background:"linear-gradient(180deg,#1A5C2A,#0D3D1A)", paddingTop:`calc(env(safe-area-inset-top, 0px) + 10px)`, paddingLeft:16, paddingRight:16, paddingBottom:0, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", marginBottom:10 }}>
-          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", padding:"6px 10px", borderRadius:8 }}>←</button>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", padding:"7px 14px", borderRadius:10, display:"flex", alignItems:"center", gap:6 }}>← Retour</button>
           <div style={{ flex:1, textAlign:"center", fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:1 }}>
             COUPE DU MONDE · GROUPE {match.group} · J{match.journee}
           </div>
@@ -1775,164 +1775,361 @@ function MatchDetailPage({ T, match, onClose }) {
 
 
 function MatchesTab({ T, user }) {
-  const [view, setView] = useState("groupes");
+  const [view, setView] = useState("live");
   const [squadView, setSquadView] = useState(null);
   const [matchDetail, setMatchDetail] = useState(null);
-
-  // Trouver le groupe de l'équipe favorite automatiquement
-  const defaultGroup = (() => {
-    if (!user?.team) return "D";
-    const found = ALL_GROUPS.find(g => g.teams.some(t => t.includes(user.team.split(" ").slice(1).join(" "))));
-    return found?.group || "D";
-  })();
-
-  const [selGroup, setSelGroup] = useState(defaultGroup);
+  const [liveMatches, setLiveMatches] = useState([]);
+  const [finishedMatches, setFinishedMatches] = useState([]);
+  const [scheduledMatches, setScheduledMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [matchEvents, setMatchEvents] = useState(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [selGroup, setSelGroup] = useState("D");
   const group = ALL_GROUPS.find(g => g.group === selGroup);
+
+  const loadMatches = async () => {
+    setLoading(true);
+    const [live, finished, scheduled] = await Promise.all([
+      fetchRealTimeMatches(),
+      fetchFinishedMatches(),
+      fetchUpcomingMatches()
+    ]);
+    setLiveMatches(live);
+    setFinishedMatches(finished);
+    setScheduledMatches(scheduled);
+    setLastUpdate(new Date());
+    setLoading(false);
+    if (live.length > 0) setView("live");
+  };
+
+  useEffect(() => {
+    loadMatches();
+    const id = setInterval(loadMatches, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const openMatchEvents = async (m) => {
+    setSelectedMatch(m);
+    setEventsLoading(true);
+    setMatchEvents(null);
+    const detail = await fetchMatchDetail(m.id);
+    setMatchEvents(detail);
+    setEventsLoading(false);
+  };
+
+  const formatScore = (m) => {
+    const h = m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null;
+    const a = m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null;
+    if (h === null) return null;
+    return `${h} - ${a}`;
+  };
+
+  const getMinute = (m) => {
+    if (m.status === "HALF_TIME") return "MT";
+    if (m.status === "PAUSED") return "⏸";
+    if (m.minute) return `${m.minute}'`;
+    return "LIVE";
+  };
+
+  const statusBadge = (m) => {
+    if (["IN_PLAY","PAUSED","HALF_TIME"].includes(m.status)) return { label: getMinute(m), color: A.red, dot: true };
+    if (m.status === "FINISHED") return { label: "FIN", color: A.green, dot: false };
+    const t = m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS";
+    return { label: t, color: A.gold, dot: false };
+  };
+
+  // ── PAGE ÉVÉNEMENTS MATCH ──
+  if (selectedMatch) {
+    const m = matchEvents || selectedMatch;
+    const isLive = ["IN_PLAY","PAUSED","HALF_TIME"].includes(m.status);
+    const isDone = m.status === "FINISHED";
+    const score = formatScore(m);
+    const goals = m.goals || [];
+    const bookings = m.bookings || [];
+    const subs = m.substitutions || [];
+
+    return (
+      <div style={{ animation:"fadeIn 0.3s ease" }}>
+        {/* BACK BAR - toujours visible */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, padding:"10px 14px", background:T.card, borderRadius:12, border:`1px solid ${T.border}` }}>
+          <button onClick={()=>setSelectedMatch(null)} style={{ display:"flex", alignItems:"center", gap:6, background:"transparent", border:"none", color:T.text, cursor:"pointer", padding:0, fontSize:13, fontWeight:700 }}>
+            ← Matchs
+          </button>
+          <div style={{ flex:1, textAlign:"center", fontSize:11, color:T.muted, fontWeight:600 }}>
+            {selectedMatch.homeTeam?.shortName} vs {selectedMatch.awayTeam?.shortName}
+          </div>
+          <div style={{ fontSize:11, fontWeight:800, color:["IN_PLAY","PAUSED","HALF_TIME"].includes(selectedMatch.status)?A.red:selectedMatch.status==="FINISHED"?A.green:T.muted }}>
+            {["IN_PLAY","PAUSED","HALF_TIME"].includes(selectedMatch.status)?"🔴 LIVE":selectedMatch.status==="FINISHED"?"✅ FIN":"📅"}
+          </div>
+        </div>
+
+        {/* HEADER */}
+        <div style={{ background:"linear-gradient(135deg,#0D3D1A,#1A5C2A)", borderRadius:16, padding:"20px 16px", marginBottom:16 }}>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", textAlign:"center", marginBottom:12, letterSpacing:2 }}>
+            COUPE DU MONDE 2026 · {isLive?"EN DIRECT":isDone?"TERMINÉ":"À VENIR"}
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div style={{ textAlign:"center", flex:1 }}>
+              <div style={{ fontSize:36, marginBottom:6 }}>{selectedMatch.homeTeam?.flag||"🏳️"}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{m.homeTeam?.shortName||m.homeTeam?.name}</div>
+            </div>
+            <div style={{ textAlign:"center", flex:1.4 }}>
+              {score ? (
+                <div>
+                  <div style={{ fontSize:44, fontWeight:900, color:"#fff", fontFamily:"monospace", letterSpacing:6 }}>{score}</div>
+                  {isLive && <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginTop:6 }}><Dot color={A.red} size={8}/><span style={{ fontSize:12, color:A.red, fontWeight:800 }}>{getMinute(m)}</span></div>}
+                  {isDone && <div style={{ fontSize:11, color:"#4ADE80", fontWeight:700, marginTop:4 }}>MATCH TERMINÉ</div>}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize:28, fontWeight:900, color:"#fff" }}>
+                    {m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS"}
+                  </div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:4 }}>
+                    {m.utcDate ? new Date(m.utcDate).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}) : ""}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign:"center", flex:1 }}>
+              <div style={{ fontSize:36, marginBottom:6 }}>{selectedMatch.awayTeam?.flag||"🏳️"}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{m.awayTeam?.shortName||m.awayTeam?.name}</div>
+            </div>
+          </div>
+          {m.venue && <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"center", marginTop:10 }}>🏟️ {m.venue}</div>}
+        </div>
+
+        {eventsLoading && (
+          <div style={{ textAlign:"center", padding:"24px 0" }}>
+            <div style={{ fontSize:28 }}>⚽</div>
+            <div style={{ fontSize:12, color:T.muted, marginTop:8 }}>Chargement des événements...</div>
+          </div>
+        )}
+
+        {/* BUTS */}
+        {goals.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:12 }}>
+            <div style={{ fontSize:10, color:A.gold, fontWeight:800, letterSpacing:2, marginBottom:12 }}>⚽ BUTS</div>
+            {goals.map((g,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom:i<goals.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:A.green+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>⚽</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{g.scorer?.name || "Inconnu"}</div>
+                  <div style={{ fontSize:11, color:T.muted }}>{g.team?.name}{g.assist?.name ? ` · 🎯 ${g.assist.name}` : ""}</div>
+                </div>
+                <div style={{ fontSize:15, fontWeight:900, color:A.gold, fontFamily:"monospace" }}>{g.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CARTONS */}
+        {bookings.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:12 }}>
+            <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>🟨 CARTONS</div>
+            {bookings.map((b,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:i<bookings.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ fontSize:20 }}>{b.card==="YELLOW_CARD"?"🟨":"🟥"}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{b.player?.name}</div>
+                  <div style={{ fontSize:11, color:T.muted }}>{b.team?.name}</div>
+                </div>
+                <div style={{ fontSize:13, color:T.muted, fontFamily:"monospace" }}>{b.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* REMPLACEMENTS */}
+        {subs.length > 0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16, marginBottom:12 }}>
+            <div style={{ fontSize:10, color:T.muted, fontWeight:800, letterSpacing:2, marginBottom:12 }}>🔄 REMPLACEMENTS</div>
+            {subs.map((s,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:i<subs.length-1?`1px solid ${T.border}`:"none" }}>
+                <div style={{ fontSize:18 }}>🔄</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:12, color:A.green, fontWeight:600 }}>↑ {s.playerIn?.name}</div>
+                  <div style={{ fontSize:12, color:A.red, fontWeight:600 }}>↓ {s.playerOut?.name}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{s.team?.name}</div>
+                </div>
+                <div style={{ fontSize:13, color:T.muted, fontFamily:"monospace" }}>{s.minute}'</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!eventsLoading && goals.length===0 && bookings.length===0 && subs.length===0 && (
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:24, textAlign:"center" }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>📊</div>
+            <div style={{ fontSize:13, color:T.muted }}>{isLive?"Match en cours · Données en attente...":isDone?"Statistiques détaillées non disponibles":"Match pas encore commencé"}</div>
+          </div>
+        )}
+
+        {isLive && (
+          <button onClick={()=>openMatchEvents(selectedMatch)} style={{ width:"100%", padding:"12px", background:A.red+"18", border:`1px solid ${A.red}44`, borderRadius:12, color:A.red, fontWeight:800, fontSize:13, cursor:"pointer", marginTop:8 }}>
+            🔄 Actualiser
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ── CARD MATCH CLIQUABLE ──
+  const MatchCard = ({ m }) => {
+    const isLive = ["IN_PLAY","PAUSED","HALF_TIME"].includes(m.status);
+    const isDone = m.status === "FINISHED";
+    const score = formatScore(m);
+    const badge = statusBadge(m);
+
+    return (
+      <button onClick={()=>openMatchEvents(m)} style={{
+        width:"100%", textAlign:"left", cursor:"pointer",
+        background: isLive ? `linear-gradient(135deg,${A.red}08,${T.card})` : T.card,
+        border:`1px solid ${isLive?A.red+"55":isDone?A.green+"33":T.border}`,
+        borderRadius:14, padding:"13px 14px", marginBottom:9,
+        position:"relative", overflow:"hidden",
+      }}>
+        {isLive && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.red},transparent)` }} />}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            {isLive && <Dot color={A.red} size={6}/>}
+            <span style={{ fontSize:10, color:T.muted, fontWeight:700 }}>CDM 2026</span>
+          </div>
+          <span style={{ fontSize:11, fontWeight:900, color:badge.color, fontFamily:"monospace" }}>{badge.label}</span>
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <span style={{ fontSize:15, fontWeight:800, color:T.text, flex:1 }}>{m.homeTeam?.shortName||m.homeTeam?.name}</span>
+          <div style={{
+            padding:"6px 14px", borderRadius:10, minWidth:60, textAlign:"center",
+            background: isLive?A.red+"18":isDone?"#0A1A0A":T.card2,
+            fontFamily:"monospace", fontWeight:900,
+            fontSize: score?20:14,
+            color: isLive?A.red:isDone?A.green:T.muted,
+            border:`1px solid ${isLive?A.red+"44":isDone?A.green+"33":T.border}`,
+          }}>
+            {score || (m.utcDate ? new Date(m.utcDate).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "VS")}
+          </div>
+          <span style={{ fontSize:15, fontWeight:800, color:T.text, flex:1, textAlign:"right" }}>{m.awayTeam?.shortName||m.awayTeam?.name}</span>
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between" }}>
+          <span style={{ fontSize:10, color:T.muted }}>🏟️ {m.venue||"CDM 2026"}</span>
+          <span style={{ fontSize:10, color:isLive?A.red:T.muted }}>Tap pour détails →</span>
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div style={{ animation:"fadeIn 0.3s ease" }}>
       {/* ONGLETS */}
-      <div style={{ display:"flex", gap:6, marginBottom:16 }}>
-        {[["groupes","⚽ Groupes"],["knockout","🏆 Tableau"],["reactions","🔥 Live"]].map(([v,l]) => (
-          <button key={v} onClick={()=>setView(v)} style={{ flex:1, padding:"9px 4px", borderRadius:11, border:`1px solid ${view===v?A.gold:T.border}`, background:view===v?A.gold+"14":"transparent", color:view===v?A.gold:T.muted, fontSize:11, fontWeight:800, cursor:"pointer" }}>{l}</button>
+      <div style={{ display:"flex", gap:5, marginBottom:14 }}>
+        {[
+          ["live", liveMatches.length>0?`🔴 Live (${liveMatches.length})`:"🔴 Live"],
+          ["finished", `✅ Résultats${finishedMatches.length>0?" ("+finishedMatches.length+")":""}`],
+          ["upcoming","📅 Programme"],
+          ["groupes","📊 Groupes"],
+          ["knockout","🏆 Tableau"],
+        ].map(([v,l])=>(
+          <button key={v} onClick={()=>setView(v)} style={{ flexShrink:0, padding:"8px 10px", borderRadius:10, border:`1px solid ${view===v?A.gold:T.border}`, background:view===v?A.gold+"14":"transparent", color:view===v?A.gold:T.muted, fontSize:10, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>{l}</button>
         ))}
       </div>
+
+      {/* REFRESH */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div style={{ fontSize:11, fontWeight:800, color:liveMatches.length>0?A.red:T.muted, display:"flex", alignItems:"center", gap:6 }}>
+          {liveMatches.length>0&&<Dot color={A.red}/>}
+          {liveMatches.length>0?`${liveMatches.length} match(s) en direct !`:"CDM 2026 · Scores en temps réel"}
+        </div>
+        <button onClick={loadMatches} disabled={loading} style={{ background:"transparent", border:`1px solid ${T.border}`, color:T.muted, borderRadius:8, padding:"5px 10px", fontSize:11, cursor:"pointer" }}>
+          {loading?"⏳":"🔄"} {lastUpdate?lastUpdate.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):""}
+        </button>
+      </div>
+
+      {/* ══ LIVE ══ */}
+      {view==="live" && (
+        <div>
+          {liveMatches.length>0
+            ? liveMatches.map((m,i)=><MatchCard key={i} m={m}/>)
+            : <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:24, textAlign:"center" }}>
+                <div style={{ fontSize:28, marginBottom:8 }}>⏳</div>
+                <div style={{ fontSize:13, color:T.muted }}>Aucun match en direct pour le moment</div>
+                {finishedMatches[0] && <div style={{ fontSize:11, color:A.green, marginTop:8 }}>Dernier résultat : {finishedMatches[0].homeTeam?.shortName} {formatScore(finishedMatches[0])} {finishedMatches[0].awayTeam?.shortName}</div>}
+              </div>
+          }
+        </div>
+      )}
+
+      {/* ══ RÉSULTATS ══ */}
+      {view==="finished" && (
+        <div>
+          {finishedMatches.length>0
+            ? finishedMatches.map((m,i)=><MatchCard key={i} m={m}/>)
+            : <div style={{ textAlign:"center", padding:"24px 0", color:T.muted }}>Pas encore de résultats</div>
+          }
+        </div>
+      )}
+
+      {/* ══ PROGRAMME ══ */}
+      {view==="upcoming" && (
+        <div>
+          {scheduledMatches.length>0
+            ? scheduledMatches.map((m,i)=><MatchCard key={i} m={m}/>)
+            : <div style={{ textAlign:"center", padding:"24px 0", color:T.muted }}>Pas de matchs programmés</div>
+          }
+        </div>
+      )}
 
       {/* ══ GROUPES ══ */}
       {view==="groupes" && (
         <div>
-          {/* PROGRAMME CDM PAR JOUR */}
-          {(()=>{
-            const today = "11 Juin 2026";
-            const days = [...new Set(TODAY_MATCHES.map(m=>m.date))];
-            return days.map(day=>{
-              const dayMatches = TODAY_MATCHES.filter(m=>m.date===day);
-              const isToday = day===today;
-              return (
-                <div key={day} style={{ marginBottom:20 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-                    <div style={{ height:1, flex:1, background:T.border }} />
-                    <div style={{ fontSize:11, fontWeight:900, color:isToday?A.gold:T.muted, padding:"4px 12px", borderRadius:20, border:`1px solid ${isToday?A.gold+"44":T.border}`, background:isToday?A.gold+"0A":"transparent", whiteSpace:"nowrap" }}>
-                      {isToday?"🔴 AUJOURD'HUI":""} {day}
-                    </div>
-                    <div style={{ height:1, flex:1, background:T.border }} />
-                  </div>
-                  {dayMatches.map((m,i)=>(
-                    <button key={i} onClick={()=>setMatchDetail(m)} style={{
-                      width:"100%", textAlign:"left", cursor:"pointer",
-                      background:m.hot?`linear-gradient(135deg,${A.gold}0A,${T.card})`:T.card,
-                      border:`1px solid ${m.hot?A.gold+"44":isToday?A.green+"33":T.border}`,
-                      borderRadius:12, padding:"12px 14px", marginBottom:8,
-                      position:"relative", overflow:"hidden"
-                    }}>
-                      {m.hot && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.gold},transparent)` }} />}
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-                        <span style={{ fontSize:10, color:m.hot?A.gold:T.muted, fontWeight:800 }}>GROUPE {m.group} · J{m.journee}</span>
-                        <span style={{ fontSize:11, fontWeight:900, color:A.gold, fontFamily:"monospace" }}>{m.time}</span>
-                      </div>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                        <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1 }}>{m.t1}</span>
-                        <div style={{ padding:"4px 12px", borderRadius:8, background:m.status==="fini"?"#1A1A2E":m.status==="live"?A.red+"18":m.hot?A.gold+"18":T.card2, fontWeight:900, fontSize:m.status==="fini"?16:12, color:m.status==="fini"?"#fff":m.status==="live"?A.red:m.hot?A.gold:T.muted, flexShrink:0, minWidth:44, textAlign:"center" }}>
-                          {m.status==="fini"?m.score:m.status==="live"?<span style={{display:"flex",flexDirection:"column",alignItems:"center"}}><span>{m.score}</span><span style={{fontSize:9,color:A.red}}>LIVE</span></span>:"VS"}
-                        </div>
-                        <span style={{ fontSize:14, fontWeight:800, color:T.text, flex:1, textAlign:"right" }}>{m.t2}</span>
-                      </div>
-                      <div style={{ display:"flex", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:10, color:T.muted }}>🏟️ {m.venue}</span>
-                        <span style={{ fontSize:10, color:T.muted }}>📺 {m.tv.split("·")[0].trim()}</span>
-                      </div>
-                      {m.hot && <div style={{ fontSize:10, color:A.gold, fontWeight:800, marginTop:4 }}>🔥 CHOC — SÉNÉGAL VS FRANCE</div>}
-                    </button>
-                  ))}
-                </div>
-              );
-            });
-          })()}
-
-          {/* BANDEAU INFO */}
-          <div style={{ background:`linear-gradient(135deg,${A.green}0A,${T.card})`, border:`1px solid ${A.green}33`, borderRadius:14, padding:"12px 16px", marginBottom:16, display:"flex", gap:10, alignItems:"center" }}>
-            <span style={{ fontSize:22 }}>⏳</span>
-            <div>
-              <div style={{ fontSize:12, fontWeight:800, color:A.green }}>CDM 2026 · C'est parti ! 🎉</div>
-              <div style={{ fontSize:11, color:T.muted }}>Match d'ouverture ce soir · Mexique vs Afrique du Sud</div>
-            </div>
-          </div>
-
-          {/* SÉLECTEUR A→L */}
-          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:16, WebkitOverflowScrolling:"touch" }}>
-            {ALL_GROUPS.map(g => (
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:8, marginBottom:14, WebkitOverflowScrolling:"touch" }}>
+            {ALL_GROUPS.map(g=>(
               <button key={g.group} onClick={()=>setSelGroup(g.group)} style={{
                 flexShrink:0, width:38, height:38, borderRadius:10,
-                border:`2px solid ${selGroup===g.group ? g.color : T.border}`,
-                background: selGroup===g.group ? g.color+"22" : T.card,
-                color: selGroup===g.group ? g.color : T.muted,
-                fontWeight:900, fontSize:13, cursor:"pointer",
-                boxShadow: selGroup===g.group ? `0 0 12px ${g.color}44` : "none",
-                position:"relative",
+                border:`2px solid ${selGroup===g.group?g.color:T.border}`,
+                background:selGroup===g.group?g.color+"22":T.card,
+                color:selGroup===g.group?g.color:T.muted,
+                fontWeight:900, fontSize:13, cursor:"pointer", position:"relative",
               }}>
                 {g.group}
-                {g.senegal && <div style={{ position:"absolute", top:2, right:2, width:6, height:6, borderRadius:"50%", background:A.green }} />}
+                {g.senegal&&<div style={{ position:"absolute", top:2, right:2, width:6, height:6, borderRadius:"50%", background:A.green }} />}
               </button>
             ))}
           </div>
-
           {group && (
             <div>
-              {/* HEADER GROUPE */}
               <div style={{ background:`linear-gradient(135deg,${group.color}14,${T.card})`, border:`1px solid ${group.color}44`, borderRadius:16, padding:"14px 16px", marginBottom:14 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:900, color:group.color, letterSpacing:2 }}>GROUPE {group.group}</div>
-                    {group.senegal && <div style={{ fontSize:10, color:A.green, fontWeight:700, marginTop:2 }}>🦁 GROUPE DU SÉNÉGAL</div>}
-                  </div>
-                  <div style={{ fontSize:11, color:T.muted }}>{group.matches.length} matchs</div>
-                </div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                  {group.teams.map((tm,i) => (
+                <div style={{ fontSize:13, fontWeight:900, color:group.color, letterSpacing:2 }}>GROUPE {group.group}</div>
+                {group.senegal&&<div style={{ fontSize:10, color:A.green, fontWeight:700, marginTop:2 }}>🦁 GROUPE DU SÉNÉGAL</div>}
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+                  {group.teams.map((tm,i)=>(
                     <div key={i} style={{ padding:"4px 10px", borderRadius:20, background:T.card2, border:`1px solid ${T.border}`, fontSize:12, fontWeight:600, color:T.text }}>{tm}</div>
                   ))}
                 </div>
               </div>
-
-              {/* MATCHS */}
-              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {group.matches.map((m, i) => {
-                  const isHot = m.hot, isSn = m.sn;
-                  const ac = isHot ? A.gold : isSn ? A.green : T.border;
+              <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+                {group.matches.map((m,i)=>{
+                  const isHot=m.hot, isSn=m.sn;
+                  const ac=isHot?A.gold:isSn?A.green:T.border;
                   return (
-                    <div key={i} style={{
-                      background: isHot ? `linear-gradient(135deg,#160b00,${T.card},#001408)` : T.card,
-                      border:`1px solid ${isHot?A.gold+"55":isSn?A.green+"44":T.border}`,
-                      borderRadius:14, padding:"12px 14px", position:"relative", overflow:"hidden",
-                    }}>
-                      {(isHot||isSn) && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${ac},transparent)` }} />}
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div key={i} style={{ background:isHot?`linear-gradient(135deg,#160b00,${T.card})`:T.card, border:`1px solid ${isHot?A.gold+"55":isSn?A.green+"44":T.border}`, borderRadius:14, padding:"12px 14px", position:"relative", overflow:"hidden" }}>
+                      {(isHot||isSn)&&<div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${ac},transparent)` }} />}
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
                         <div style={{ display:"flex", gap:6 }}>
-                          <span style={{ fontSize:10, color:T.muted, fontFamily:"monospace" }}>J{i+1}</span>
-                          {isHot && <span style={{ fontSize:10, color:A.gold, fontWeight:900, background:A.gold+"14", padding:"2px 8px", borderRadius:20 }}>🔥 CHOC HISTORIQUE</span>}
-                          {isSn && <span style={{ fontSize:10, color:A.green, fontWeight:900, background:A.green+"14", padding:"2px 8px", borderRadius:20 }}>🦁 LIONS</span>}
+                          <span style={{ fontSize:10, color:T.muted }}>J{i+1}</span>
+                          {isHot&&<span style={{ fontSize:10, color:A.gold, fontWeight:900, background:A.gold+"14", padding:"2px 8px", borderRadius:20 }}>🔥 CHOC</span>}
+                          {isSn&&<span style={{ fontSize:10, color:A.green, fontWeight:900, background:A.green+"14", padding:"2px 8px", borderRadius:20 }}>🦁 LIONS</span>}
                         </div>
-                        <span style={{ fontSize:11, fontWeight:700, color:A.gold, fontFamily:"monospace" }}>{m.time}</span>
+                        <span style={{ fontSize:12, fontWeight:800, color:A.gold }}>{m.time}</span>
                       </div>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                         <span style={{ fontSize:15, fontWeight:800, flex:1, color:T.text }}>{m.t1}</span>
-                        <div style={{ padding:"6px 14px", borderRadius:8, background:isHot?A.gold+"18":isSn?A.green+"18":T.card2, border:`1px solid ${ac}33`, fontFamily:"monospace", fontWeight:900, fontSize:15, color:isHot?A.gold:isSn?A.green:T.muted }}>
-                          VS
-                        </div>
+                        <div style={{ padding:"6px 14px", borderRadius:8, background:isHot?A.gold+"18":isSn?A.green+"18":T.card2, border:`1px solid ${ac}33`, fontFamily:"monospace", fontWeight:900, fontSize:15, color:isHot?A.gold:isSn?A.green:T.muted }}>VS</div>
                         <span style={{ fontSize:15, fontWeight:800, flex:1, textAlign:"right", color:T.text }}>{m.t2}</span>
                       </div>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                        <span style={{ fontSize:13, fontWeight:800, color:A.gold }}>📅 {m.date}</span>
-                        <span style={{ fontSize:11, color:T.muted }}>🏟️ {m.venue}</span>
-                      </div>
-                      {/* BOUTONS COMPOSITION */}
-                      <div style={{ display:"flex", gap:6 }}>
-                        {[m.t1, m.t2].filter(team => SQUADS[team]).map((team,ti) => (
-                          <button key={ti} onClick={()=>setSquadView(team)} style={{ flex:1, padding:"7px 8px", background:T.card2, border:`1px solid ${T.border}`, borderRadius:9, fontSize:11, fontWeight:700, color:T.muted, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
-                            👕 {team.split(" ").slice(1).join(" ")}
-                          </button>
-                        ))}
-                      </div>
+                      <div style={{ fontSize:11, color:T.muted }}>📅 {m.date} · 🏟️ {m.venue}</div>
                     </div>
                   );
                 })}
@@ -1942,75 +2139,45 @@ function MatchesTab({ T, user }) {
         </div>
       )}
 
-      {/* ══ TABLEAU ÉLIMINATOIRE FIFA ══ */}
+      {/* ══ TABLEAU ══ */}
       {view==="knockout" && (
         <div>
-          <div style={{ background:`linear-gradient(135deg,${A.gold}0A,${T.card})`, border:`1px solid ${A.gold}33`, borderRadius:14, padding:"12px 16px", marginBottom:16 }}>
-            <div style={{ fontSize:12, fontWeight:800, color:A.gold }}>🏆 TABLEAU ÉLIMINATOIRE OFFICIEL FIFA</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>48 équipes · 16 huitièmes · Dispatching FIFA officiel</div>
-          </div>
-
-          {KNOCKOUT_BRACKET.map((round, ri) => (
+          {KNOCKOUT_BRACKET.map((round,ri)=>(
             <div key={ri} style={{ marginBottom:24 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
                 <div style={{ height:1, flex:1, background:T.border }} />
-                <div style={{ fontSize:11, fontWeight:900, color:A.gold, letterSpacing:1.5, padding:"4px 14px", borderRadius:20, border:`1px solid ${A.gold}33`, background:A.gold+"0A", whiteSpace:"nowrap" }}>
-                  {round.round} · {round.date}
-                </div>
+                <div style={{ fontSize:11, fontWeight:900, color:A.gold, letterSpacing:1.5, padding:"4px 14px", borderRadius:20, border:`1px solid ${A.gold}33`, background:A.gold+"0A", whiteSpace:"nowrap" }}>{round.round} · {round.date}</div>
                 <div style={{ height:1, flex:1, background:T.border }} />
               </div>
-
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                {round.matches.map((m, mi) => (
-                  <div key={mi} style={{
-                    background: m.id==="final" ? `linear-gradient(135deg,${A.gold}14,${T.card})` : T.card,
-                    border: `1px solid ${m.id==="final" ? A.gold+"55" : T.border}`,
-                    borderRadius:12, padding:"10px 14px", position:"relative", overflow:"hidden",
-                  }}>
-                    {m.id==="final" && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.gold},transparent)` }} />}
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                      <span style={{ fontSize:10, color:m.id==="final"?A.gold:T.muted, fontWeight:800, fontFamily:"monospace" }}>
-                        {m.id==="final" ? "🏆 FINALE" : `M${mi+1}`}
-                      </span>
-                      <span style={{ fontSize:10, color:A.gold, fontWeight:700 }}>{m.date} · {m.time}</span>
-                    </div>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                      <div style={{ flex:1, padding:"8px 10px", background:T.card2, borderRadius:8, marginRight:8 }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text, fontFamily:"monospace" }}>{m.slot1}</div>
-                      </div>
-                      <div style={{ padding:"6px 12px", borderRadius:8, background:m.id==="final"?A.gold+"18":T.bg, border:`1px solid ${m.id==="final"?A.gold+"44":T.border}`, fontFamily:"monospace", fontWeight:900, fontSize:13, color:m.id==="final"?A.gold:T.muted, flexShrink:0 }}>
-                        VS
-                      </div>
-                      <div style={{ flex:1, padding:"8px 10px", background:T.card2, borderRadius:8, marginLeft:8, textAlign:"right" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text, fontFamily:"monospace" }}>{m.slot2}</div>
-                      </div>
-                    </div>
-                    <div style={{ fontSize:10, color:T.muted }}>🏟️ {m.venue}</div>
+              {round.matches.map((m,mi)=>(
+                <div key={mi} style={{ background:m.id==="final"?`linear-gradient(135deg,${A.gold}14,${T.card})`:T.card, border:`1px solid ${m.id==="final"?A.gold+"55":T.border}`, borderRadius:12, padding:"10px 14px", marginBottom:8, position:"relative", overflow:"hidden" }}>
+                  {m.id==="final"&&<div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${A.gold},transparent)` }} />}
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                    <span style={{ fontSize:10, color:m.id==="final"?A.gold:T.muted, fontWeight:800 }}>{m.id==="final"?"🏆 FINALE":`M${mi+1}`}</span>
+                    <span style={{ fontSize:10, color:A.gold }}>{m.date} · {m.time}</span>
                   </div>
-                ))}
-              </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                    <div style={{ flex:1, padding:"8px 10px", background:T.card2, borderRadius:8, marginRight:8 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:T.text, fontFamily:"monospace" }}>{m.slot1}</div>
+                    </div>
+                    <div style={{ padding:"6px 12px", borderRadius:8, background:m.id==="final"?A.gold+"18":T.bg, border:`1px solid ${m.id==="final"?A.gold+"44":T.border}`, fontFamily:"monospace", fontWeight:900, fontSize:13, color:m.id==="final"?A.gold:T.muted, flexShrink:0 }}>VS</div>
+                    <div style={{ flex:1, padding:"8px 10px", background:T.card2, borderRadius:8, marginLeft:8, textAlign:"right" }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:T.text, fontFamily:"monospace" }}>{m.slot2}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize:10, color:T.muted }}>🏟️ {m.venue}</div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
       )}
 
-      {/* ══ RÉACTIONS LIVE ══ */}
-      {view==="reactions" && (
-        <div>
-          <LiveScoreWidget T={T} />
-          <ReactionsWidget T={T} />
-        </div>
-      )}
-
-      {/* COMPOSITION MODAL */}
       {squadView && <SquadCard T={T} teamName={squadView} onClose={()=>setSquadView(null)} />}
-
-      {/* MATCH DETAIL PAGE */}
       {matchDetail && <MatchDetailPage T={T} match={matchDetail} onClose={()=>setMatchDetail(null)} />}
     </div>
   );
 }
-/* ══ REACTIONS ══ */
 function ReactionsWidget({ T }) {
   const [counts, setCounts] = useState({"🔥":8423,"⚽":5211,"🦁":12890,"😱":3402,"❤️":7654,"👑":2341,"🙏":4503,"💯":6781});
   const [burst, setBurst] = useState(null);
@@ -2797,7 +2964,7 @@ function LiveScoreWidget({ T }) {
     return (
       <div style={{ animation:"fadeIn 0.3s ease" }}>
         {/* BACK */}
-        <button onClick={()=>setSelectedMatch(null)} style={{ display:"flex", alignItems:"center", gap:6, background:"transparent", border:"none", color:T.muted, cursor:"pointer", marginBottom:14, padding:0 }}>
+        <button onClick={()=>setSelectedMatch(null)} style={{ display:"flex", alignItems:"center", gap:8, background:T.card, border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", marginBottom:16, padding:"10px 16px", borderRadius:12, fontSize:13, fontWeight:700, width:"100%" }}>
           ← Retour aux scores
         </button>
 
