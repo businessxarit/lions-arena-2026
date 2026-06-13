@@ -2835,3 +2835,4 @@ function LiveScoreWidget({ T }) {
 }
 
 
+export default App;
