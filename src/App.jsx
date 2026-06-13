@@ -2835,4 +2835,113 @@ function LiveScoreWidget({ T }) {
 }
 
 
-export default App;
+/* ══ MAIN APP ══ */
+const NAV_ICONS = {
+  matchs: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth={active?2.2:1.8}/><path d="M12 2 C8 6 8 18 12 22" stroke={color} strokeWidth={active?2:1.6}/><path d="M12 2 C16 6 16 18 12 22" stroke={color} strokeWidth={active?2:1.6}/><path d="M2 12 L22 12" stroke={color} strokeWidth={active?2:1.6}/></svg>),
+  histoire: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2 L15 9 L22 9 L16.5 14 L18.5 21 L12 17 L5.5 21 L7.5 14 L2 9 L9 9 Z" stroke={color} strokeWidth={active?2:1.7} strokeLinejoin="round" fill={active?color+"33":"none"}/></svg>),
+  legendes: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 4 L6 14 C6 18 18 18 18 14 L18 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/><path d="M4 4 L20 4" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/><path d="M9 20 L15 20" stroke={color} strokeWidth={active?2.2:1.8} strokeLinecap="round"/><path d="M12 18 L12 20" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/></svg>),
+  pronos: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke={color} strokeWidth={active?2.2:1.8}/><circle cx="12" cy="12" r="4" stroke={color} strokeWidth={active?2:1.6}/><circle cx="12" cy="12" r="1.5" fill={color}/></svg>),
+  ia: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke={color} strokeWidth={active?2.2:1.8}/><circle cx="8" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/><circle cx="16" cy="12" r="2" stroke={color} strokeWidth={active?2:1.6}/><path d="M8 6 L8 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/><path d="M16 6 L16 4" stroke={color} strokeWidth={active?2:1.8} strokeLinecap="round"/></svg>),
+  forum: (active, color) => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 15 C21 16.1 20.1 17 19 17 L7 17 L3 21 L3 5 C3 3.9 3.9 3 5 3 L19 3 C20.1 3 21 3.9 21 5 Z" stroke={color} strokeWidth={active?2.2:1.8} strokeLinejoin="round" fill={active?color+"18":"none"}/><line x1="7" y1="8" x2="17" y2="8" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/><line x1="7" y1="12" x2="14" y2="12" stroke={color} strokeWidth={active?1.8:1.5} strokeLinecap="round"/></svg>),
+};
+
+const TABS = [["matchs","Matchs"],["histoire","Histoire"],["legendes","Légendes"],["pronos","Pronos"],["ia","IA"],["forum","Forum"]];
+
+export default function App() {
+  const [user, setUser] = useState(() => {
+    try { const s = localStorage.getItem("lions_user"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [isDark, setIsDark] = useState(true);
+  const [tab, setTab] = useState(0);
+  const [navShrunk, setNavShrunk] = useState(false);
+  const lastScrollY = useRef(0);
+  const bodyRef = useRef(null);
+
+  const T = isDark ? {
+    bg:"#05050A", card:"#0E0E1A", card2:"#12121E", header:"rgba(5,5,10,0.95)",
+    text:"#F0F0FF", muted:"#666688", border:"#1A1A2E", input:"#0A0A14", inputBorder:"#1A1A2E",
+  } : {
+    bg:"#F5F5FA", card:"#FFFFFF", card2:"#F0F0F8", header:"rgba(245,245,250,0.95)",
+    text:"#0A0A1A", muted:"#666688", border:"#E0E0EE", input:"#FFFFFF", inputBorder:"#D0D0E8",
+  };
+
+  const handleDone = (u) => {
+    setUser(u);
+    localStorage.setItem("lions_user", JSON.stringify(u));
+  };
+
+  const changeTab = i => {
+    setTab(i);
+    if(bodyRef.current) bodyRef.current.scrollTop = 0;
+    setNavShrunk(false);
+  };
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const curr = el.scrollTop;
+      if (curr > lastScrollY.current + 8) setNavShrunk(true);
+      else if (curr < lastScrollY.current - 8) setNavShrunk(false);
+      lastScrollY.current = curr;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  if (!user) return <Splash onDone={handleDone} />;
+
+  return (
+    <div style={{ background:T.bg, height:"100dvh", color:T.text, fontFamily:"'DM Sans',sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", position:"fixed", top:0, left:0, right:0, bottom:0 }}>
+      {/* HEADER */}
+      <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.border}`, background:T.header, backdropFilter:"blur(20px)", flexShrink:0, zIndex:300 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#00853F,#F5C518)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🦁</div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, letterSpacing:1 }}><span style={{ color:T.text }}>LIONS </span><span style={{ color:A.gold }}>ARENA</span></div>
+            <div style={{ fontSize:9, color:T.muted, letterSpacing:2 }}>THE LIVING HISTORY · 2026</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:5, background:A.red+"18", border:`1px solid ${A.red}44`, borderRadius:20, padding:"4px 10px" }}>
+            <Dot color={A.red}/>
+            <span style={{ fontSize:10, fontWeight:800, color:A.red }}>LIVE</span>
+          </div>
+          <button onClick={()=>setIsDark(d=>!d)} style={{ background:T.card2, border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 8px", fontSize:14, cursor:"pointer" }}>
+            {isDark?"☀️":"🌙"}
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div ref={bodyRef} style={{ flex:1, overflowY:"scroll", overflowX:"hidden", minHeight:0, padding:"16px 14px 100px", WebkitOverflowScrolling:"touch" }}>
+        {tab===0 && <MatchesTab T={T} user={user} />}
+        {tab===1 && <HistoryTab T={T} />}
+        {tab===2 && <LegendsTab T={T} />}
+        {tab===3 && <PronosticsTab T={T} user={user} />}
+        {tab===4 && <AITab T={T} user={user} />}
+        {tab===5 && <CommunityTab T={T} user={user} />}
+      </div>
+
+      {/* BOTTOM NAV */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:500, display:"flex", justifyContent:"center", padding:`0 0 calc(env(safe-area-inset-bottom, 10px) + 6px)`, background:"transparent", pointerEvents:"none" }}>
+        <div style={{ display:"flex", alignItems:"center", background:navShrunk?T.header+"EE":T.header, backdropFilter:"blur(24px)", borderTop:navShrunk?"none":`1px solid ${T.border}`, borderRadius:navShrunk?40:0, padding:navShrunk?"6px 10px":"8px 0", gap:navShrunk?4:0, width:navShrunk?"auto":"100%", boxShadow:navShrunk?"0 4px 30px rgba(0,0,0,0.5)":"none", transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)", pointerEvents:"all" }}>
+          {TABS.map(([key,lbl],i) => {
+            const isActive = tab===i;
+            const iconColor = isActive ? A.gold : T.muted;
+            return (
+              <button key={i} onClick={()=>changeTab(i)} style={{ flex:navShrunk?"none":1, background:navShrunk&&isActive?A.gold+"22":"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:navShrunk?0:3, padding:navShrunk?"8px 14px":"6px 0 2px", borderRadius:navShrunk?30:0, transition:"all 0.3s ease", minWidth:navShrunk?44:"auto" }}>
+                <div style={{ opacity:isActive?1:0.55, transition:"all 0.2s", transform:isActive?"scale(1.08)":"scale(1)" }}>
+                  {NAV_ICONS[key]?.(isActive, iconColor)}
+                </div>
+                {!navShrunk && <span style={{ fontSize:9, color:iconColor, fontWeight:900, letterSpacing:0.8 }}>{lbl.toUpperCase()}</span>}
+                {!navShrunk && isActive && <div style={{ width:16, height:2, borderRadius:1, background:A.gold, marginTop:1 }} />}
+                {navShrunk && isActive && <div style={{ width:4, height:4, borderRadius:"50%", background:A.gold, marginTop:2 }} />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
